@@ -156,11 +156,10 @@ class ApiClient {
     return this.request<{ connected: boolean }>('/youtube-sync/status');
   }
 
-  startYouTubeOAuth() {
-    const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
-    // Redirect the browser to the OAuth start endpoint
-    window.location.href = `${API_BASE}/youtube-sync/oauth/start?token=${encodeURIComponent(token)}`;
+  async startYouTubeOAuth() {
+    // Backend issues a single-use nonce bound to the user; we redirect to the returned Google URL.
+    const { url } = await this.request<{ url: string }>('/youtube-sync/oauth/start');
+    window.location.href = url;
   }
 
   async syncPlaylistToYouTube(playlistId: string) {

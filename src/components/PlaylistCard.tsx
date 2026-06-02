@@ -75,8 +75,16 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, isExpanded
 
   const handleSyncToYouTube = async () => {
     if (!ytConnected) {
-      // Start OAuth flow
-      api.startYouTubeOAuth();
+      try {
+        await api.startYouTubeOAuth();
+      } catch (error: any) {
+        setSyncStatus('error');
+        setSyncMessage(error.message || 'Failed to start YouTube authorization');
+        setTimeout(() => {
+          setSyncStatus('idle');
+          setSyncMessage('');
+        }, 5000);
+      }
       return;
     }
 

@@ -1,14 +1,35 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { google } from 'googleapis';
 import User from '../models/User.js';
 import Playlist from '../models/Playlist.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
+// Single-use OAuth state nonces. Bound to a userId, expire after 10 minutes.
+// In-memory is fine for single-instance deployments; switch to Mongo if scaling out.
+const NONCE_TTL_MS = 10 * 60 * 1000;
+const oauthNonces = new Map();
+
+function createOAuthNonce(userId) {
+  const now = Date.now();
+  for (const [n, data] of oauthNonces) {
+    if (data.expiresAt < now) oauthNonces.delete(n);
+  }
+  const nonce = crypto.randomBytes(32).toString('base64url');
+  oauthNonces.set(nonce, { userId, expiresAt: now + NONCE_TTL_MS });
+  return nonce;
+}
+
+function consumeOAuthNonce(nonce) {
+  const data = oauthNonces.get(nonce);
+  if (!data) return null;
+  oauthNonces.delete(nonce);
+  if (data.expiresAt < Date.now()) return null;
+  return data.userId;
+}
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -20,48 +41,42 @@ function getOAuth2Client() {
 
 /**
  * GET /api/youtube-sync/oauth/start
- * Redirects user to Google's OAuth consent page
- * The app's JWT token is passed via 'state' parameter
+ * Authenticated. Issues a single-use nonce bound to the user and returns the
+ * Google consent URL with that nonce as `state`. Frontend redirects to it.
  */
-router.get('/oauth/start', (req, res) => {
-  const appToken = req.query.token;
-  if (!appToken) {
-    return res.status(400).json({ error: 'App token required' });
-  }
-
+router.get('/oauth/start', authenticate, (req, res) => {
+  const nonce = createOAuthNonce(req.userId);
   const oauth2Client = getOAuth2Client();
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
     scope: ['https://www.googleapis.com/auth/youtube'],
-    state: appToken, // pass our JWT so we know which user on callback
+    state: nonce,
   });
-
-  res.redirect(authUrl);
+  res.json({ url: authUrl });
 });
 
 /**
  * GET /api/youtube-sync/oauth/callback
- * Google redirects here after user authorizes
- * Exchanges code for tokens and stores in user's DB record
+ * Google redirects here after user authorizes. Verifies the state nonce,
+ * exchanges the code for tokens, and stores them on the user record.
  */
 router.get('/oauth/callback', async (req, res) => {
-  const { code, state: appToken } = req.query;
+  const { code, state } = req.query;
 
-  if (!code || !appToken) {
+  if (!code || !state) {
     return res.status(400).send('Missing authorization code or state');
   }
 
-  try {
-    // Verify our app JWT to get user ID
-    const decoded = jwt.verify(appToken, JWT_SECRET);
-    const userId = decoded.id;
+  const userId = consumeOAuthNonce(state);
+  if (!userId) {
+    return res.redirect(`${CLIENT_URL}/?youtube_error=invalid_state`);
+  }
 
-    // Exchange code for tokens
+  try {
     const oauth2Client = getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
 
-    // Store tokens in user record
     await User.findByIdAndUpdate(userId, {
       googleTokens: {
         access_token: tokens.access_token,
@@ -72,7 +87,6 @@ router.get('/oauth/callback', async (req, res) => {
       },
     });
 
-    // Redirect back to the app with success message
     res.redirect(`${CLIENT_URL}/?youtube_connected=true`);
   } catch (error) {
     console.error('OAuth callback error:', error);
