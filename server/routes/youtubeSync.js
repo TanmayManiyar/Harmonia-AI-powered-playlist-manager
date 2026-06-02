@@ -2,10 +2,13 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { google } from 'googleapis';
 import User from '../models/User.js';
+import Playlist from '../models/Playlist.js';
+import { authenticate } from '../middleware/authenticate.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -14,22 +17,6 @@ function getOAuth2Client() {
     process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/youtube/oauth/callback'
   );
 }
-
-// Auth middleware
-const authenticate = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 /**
  * GET /api/youtube-sync/oauth/start
@@ -86,10 +73,10 @@ router.get('/oauth/callback', async (req, res) => {
     });
 
     // Redirect back to the app with success message
-    res.redirect('http://localhost:5173/?youtube_connected=true');
+    res.redirect(`${CLIENT_URL}/?youtube_connected=true`);
   } catch (error) {
     console.error('OAuth callback error:', error);
-    res.redirect('http://localhost:5173/?youtube_error=true');
+    res.redirect(`${CLIENT_URL}/?youtube_error=true`);
   }
 });
 
@@ -131,8 +118,6 @@ router.post('/sync/:playlistId', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'YouTube account not connected. Please connect first.' });
     }
 
-    // Import Playlist model dynamically to avoid circular deps
-    const { default: Playlist } = await import('../models/Playlist.js');
     const playlist = await Playlist.findOne({ _id: req.params.playlistId, userId: req.userId });
     if (!playlist) {
       return res.status(404).json({ error: 'Playlist not found' });

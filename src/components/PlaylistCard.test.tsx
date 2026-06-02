@@ -27,29 +27,29 @@ describe('PlaylistCard', () => {
   });
 
   it('should render playlist name', () => {
-    render(<PlaylistCard playlist={mockPlaylist} />);
+    render(<PlaylistCard playlist={mockPlaylist} isExpanded={false} onToggle={() => {}} />);
     expect(screen.getByText('Rock Playlist')).toBeDefined();
   });
 
   it('should render playlist genre', () => {
-    render(<PlaylistCard playlist={mockPlaylist} />);
+    render(<PlaylistCard playlist={mockPlaylist} isExpanded={false} onToggle={() => {}} />);
     expect(screen.getByText(/Genre: Rock/)).toBeDefined();
   });
 
   it('should render song count', () => {
-    render(<PlaylistCard playlist={mockPlaylist} />);
+    render(<PlaylistCard playlist={mockPlaylist} isExpanded={false} onToggle={() => {}} />);
     expect(screen.getByText(/1 songs/)).toBeDefined();
   });
 
-  it('should render songs in the playlist', () => {
-    render(<PlaylistCard playlist={mockPlaylist} />);
+  it('should render songs when expanded', () => {
+    render(<PlaylistCard playlist={mockPlaylist} isExpanded={true} onToggle={() => {}} />);
     expect(screen.getByText('Bohemian Rhapsody')).toBeDefined();
     expect(screen.getByText('Queen')).toBeDefined();
   });
 
-  it('should show empty message when no songs', () => {
+  it('should show empty message when expanded with no songs', () => {
     const emptyPlaylist = { ...mockPlaylist, songs: [] };
-    render(<PlaylistCard playlist={emptyPlaylist} />);
+    render(<PlaylistCard playlist={emptyPlaylist} isExpanded={true} onToggle={() => {}} />);
     expect(screen.getByText('No songs in this playlist')).toBeDefined();
   });
 });

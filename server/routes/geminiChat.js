@@ -1,29 +1,12 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import Playlist from '../models/Playlist.js';
+import { authenticate } from '../middleware/authenticate.js';
+import { normalizeString, escapeRegExp } from '../utils/validation.js';
 import { curatPlaylistFromChat } from '../services/gemini.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
 const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
-
-// Auth middleware
-const authenticate = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 router.use(authenticate);
 
@@ -38,9 +21,16 @@ function getApiKey() {
  */
 router.post('/chat', async (req, res) => {
   const { prompt, playlistName, genre } = req.body;
+  const userPrompt = normalizeString(prompt);
 
-  if (!prompt) {
+  if (!userPrompt) {
     return res.status(400).json({ error: 'Prompt is required' });
+  }
+  if (playlistName !== undefined && !normalizeString(playlistName)) {
+    return res.status(400).json({ error: 'Playlist name must not be empty' });
+  }
+  if (genre !== undefined && !normalizeString(genre)) {
+    return res.status(400).json({ error: 'Genre must not be empty' });
   }
 
   try {
@@ -55,7 +45,7 @@ router.post('/chat', async (req, res) => {
 
     // 2. Parse optional song count from prompt (e.g. "20 songs")
     let requestedCount = 10;
-    const match = prompt.match(/\b(\d+)\s*(songs?|tracks?)\b/i);
+    const match = userPrompt.match(/\b(\d+)\s*(songs?|tracks?)\b/i);
     if (match && match[1]) {
       requestedCount = parseInt(match[1], 10);
       if (requestedCount > 30) requestedCount = 30; // Cap at 30 to save YT quota
@@ -63,22 +53,16 @@ router.post('/chat', async (req, res) => {
     }
 
     // 3. Call Gemini
-    const aiResponse = await curatPlaylistFromChat(prompt, excludeList, requestedCount);
-    const assignedGenre = genre || aiResponse.genre || 'AI Mix';
-    
-    // Calculate name: Genre Playlist N AI
-    const existingCount = await Playlist.countDocuments({
-      userId: req.userId,
-      name: { $regex: new RegExp(`\\bAI\\b`, 'i') }, // Count AI playlists for numbering, or use genre
-    });
+    const aiResponse = await curatPlaylistFromChat(userPrompt, excludeList, requestedCount);
+    const assignedGenre = normalizeString(genre) || normalizeString(aiResponse.genre) || 'AI Mix';
     
     // Better numbering: base it precisely on the genre
     const genreCount = await Playlist.countDocuments({
       userId: req.userId,
-      genre: { $regex: new RegExp(`^${assignedGenre}$`, 'i') }
+      genre: { $regex: new RegExp(`^${escapeRegExp(assignedGenre)}$`, 'i') }
     });
     
-    const assignedName = playlistName || `${assignedGenre} Playlist ${genreCount + 1} AI`;
+    const assignedName = normalizeString(playlistName) || `${assignedGenre} Playlist ${genreCount + 1} AI`;
 
     const aiSongs = aiResponse.songs;
 

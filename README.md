@@ -1,133 +1,125 @@
-# Harmonia- AI powered playlist manager
+# Harmonia - AI-Powered Playlist Manager
 
-A web application for organizing and managing music playlists with genre-based organization and real-time song search powered by YouTube Data API.
+Harmonia is a full-stack web app for creating, managing, and syncing music playlists. Users sign in, generate playlists with Google Gemini, enrich songs with YouTube Data API results, save playlists in MongoDB, and optionally sync playlists into their YouTube account.
 
 ## Features
 
-- Create genre-based playlists with auto-populated songs
-- Real-time song search using YouTube Data API v3
-- Organize playlists by genre, favorites, and custom collections
-- Add custom songs manually
-- Language preference for playlist curation
-- Dark theme with smooth animations
-- Cross-section consistency with reactive state management
+- Email/password authentication with JWT
+- MongoDB-backed playlist storage per user
+- AI playlist generation with Google Gemini
+- Duplicate-aware AI recommendations based on a user's saved songs
+- YouTube Data API search for song discovery and video IDs
+- YouTube OAuth connection and playlist sync
+- Favorites, playlist renaming, song removal, and account deletion
+- React/Vite frontend with Zustand state management
+- Vitest, React Testing Library, and fast-check test coverage
 
 ## Tech Stack
 
-- **Frontend**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **State Management**: Zustand
-- **Routing**: React Router v6
-- **Testing**: Vitest + React Testing Library + fast-check (property-based testing)
-- **Code Quality**: ESLint + Prettier with TypeScript strict mode
+- Frontend: React 18, TypeScript, Vite, React Router, Zustand
+- Backend: Node.js, Express 5, Mongoose, JWT, bcrypt
+- Database: MongoDB
+- AI: `@google/genai`
+- External APIs: YouTube Data API v3 and Google OAuth
+- Quality: Vitest, React Testing Library, ESLint, Prettier
 
-## Getting Started
-
-### Prerequisites
+## Prerequisites
 
 - Node.js 18+ and npm
-- YouTube Data API v3 key (see setup instructions below)
+- MongoDB running locally or a MongoDB connection string
+- Gemini API key
+- YouTube Data API key
+- Google OAuth client credentials if you want YouTube sync
 
-### YouTube API Setup
+## Configuration
 
-To enable real-time song search, you need a YouTube Data API key:
+Create a `.env` file in the project root. Use `.env.example` as the template:
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the YouTube Data API v3
-4. Create credentials (API Key)
-5. Copy the API key
+```bash
+YOUTUBE_API_KEY=your_youtube_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+JWT_SECRET=replace_with_a_long_random_secret
+MONGODB_URI=mongodb://127.0.0.1:27017/playlist-manager
+PORT=5000
+CLIENT_URL=http://localhost:5173
+VITE_API_BASE_URL=http://localhost:5000/api
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/youtube/oauth/callback
+```
 
-For detailed instructions, see [YOUTUBE_API_SETUP.md](./YOUTUBE_API_SETUP.md)
+`CLIENT_URL` controls backend redirects and CORS for the frontend. `VITE_API_BASE_URL` controls which backend the frontend calls. For local development the defaults are `http://localhost:5173` and `http://localhost:5000/api`.
 
-### Installation
+## Installation
 
 ```bash
 npm install
 ```
 
-### Configuration
+## Development
 
-Create a `.env` file in the root directory:
+Start MongoDB first, then run the backend and frontend in separate terminals:
 
 ```bash
-VITE_YOUTUBE_API_KEY=your_api_key_here
+npm run server
 ```
-
-See `.env.example` for reference.
-
-### Development
 
 ```bash
 npm run dev
 ```
 
-The app will run at `http://localhost:5173`
+The frontend runs at `http://localhost:5173` and the API runs at `http://localhost:5000/api`.
 
-### Build
+## Build, Test, And Lint
 
 ```bash
 npm run build
-```
-
-### Testing
-
-```bash
-# Run tests once
 npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with UI
-npm run test:ui
+npm run lint
 ```
 
-### Linting and Formatting
+On Windows PowerShell, if script execution blocks `npm`, use `npm.cmd`:
 
 ```bash
-# Lint code
-npm run lint
-
-# Format code
-npm run format
+npm.cmd run build
+npm.cmd test
+npm.cmd run lint
 ```
 
 ## Project Structure
 
-```
+```text
+server/
+  index.js                  Express app entrypoint
+  middleware/               Shared Express middleware
+  models/                   Mongoose User and Playlist models
+  routes/                   Auth, playlists, YouTube, YouTube sync, Gemini routes
+  services/gemini.js        Gemini playlist generation
+  utils/                    Request validation helpers
+
 src/
-├── components/        # Reusable UI components
-├── models/            # Data models and type definitions
-├── pages/             # Page components
-├── services/          # Business logic services
-│   ├── PlaylistService.ts    # Playlist CRUD operations
-│   ├── SearchService.ts      # Song search with YouTube API
-│   └── YouTubeAPIService.ts  # YouTube Data API integration
-├── store/             # State management (Zustand)
-├── test/              # Test setup and utilities
-├── utils/             # Utility functions (storage, etc.)
-├── App.tsx            # Root application component
-├── main.tsx           # Application entry point
-└── index.css          # Global styles with dark theme
+  components/               Reusable React UI
+  pages/                    Login and main app pages
+  services/                 Frontend API client and playlist validation service
+  store/                    Zustand auth and playlist stores
+  models/                   Shared frontend TypeScript types
+  test/                     Vitest setup and shared mocks
 ```
 
-## Architecture
+## Data Flow
 
-The application follows a layered architecture:
+1. The user authenticates through the Express backend.
+2. The frontend stores the JWT locally and sends it with API requests.
+3. Playlist data is persisted in MongoDB through Mongoose models.
+4. Gemini receives the user's prompt plus an exclusion list built from existing playlist songs.
+5. The backend resolves AI song suggestions to YouTube video IDs when an API key is configured.
+6. YouTube sync uses OAuth tokens stored on the user's MongoDB record.
 
-- **Presentation Layer**: React components with dark theme styling
-- **Application Layer**: State management with Zustand
-- **Service Layer**: Business logic services
-- **Data Layer**: Local storage persistence
-- **External API**: YouTube Data API v3 for song search
+## Security Notes
 
-## How It Works
-
-1. **Playlist Creation**: When you create a playlist, the app automatically searches YouTube for 10 popular songs in that genre
-2. **Song Search**: Real-time search queries the YouTube Data API to find matching songs
-3. **Data Storage**: All playlists are stored locally in browser localStorage
-4. **State Management**: Zustand provides reactive state updates across all components
+- Keep `.env` out of source control.
+- Rotate API keys and OAuth secrets if they were ever shared publicly.
+- Use a strong `JWT_SECRET` outside local development.
 
 ## License
 

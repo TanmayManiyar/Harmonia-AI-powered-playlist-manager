@@ -1,15 +1,31 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MyPlaylistsSection } from './MyPlaylistsSection';
 import { usePlaylistStore } from '../store';
+import { Playlist } from '../models';
+
+const makePlaylist = (id: string, genre: string, isFavorite = false): Playlist => ({
+  id,
+  name: `${genre} Playlist 1`,
+  genre,
+  songs: [],
+  isFavorite,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
+const setPlaylists = (playlists: Playlist[]) => {
+  act(() => {
+    usePlaylistStore.setState({
+      playlists: new Map(playlists.map((playlist) => [playlist.id, playlist])),
+      isLoading: false,
+    });
+  });
+};
 
 describe('MyPlaylistsSection', () => {
   beforeEach(() => {
-    // Reset store before each test
-    const store = usePlaylistStore.getState();
-    store.playlists.forEach((_, id) => {
-      store.deletePlaylist(id);
-    });
+    setPlaylists([]);
   });
 
   it('should display empty state when no playlists exist', () => {
@@ -20,17 +36,18 @@ describe('MyPlaylistsSection', () => {
   });
 
   it('should display all playlists', () => {
-    const store = usePlaylistStore.getState();
-    store.createPlaylist('Rock');
-    store.createPlaylist('Jazz');
-    store.createPlaylist('Pop');
+    setPlaylists([
+      makePlaylist('rock', 'Rock'),
+      makePlaylist('jazz', 'Jazz'),
+      makePlaylist('pop', 'Pop'),
+    ]);
 
     render(<MyPlaylistsSection />);
 
     expect(screen.getByText('My Playlists')).toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Jazz Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Pop Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Jazz Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Pop Playlist 1')).toBeInTheDocument();
   });
 
   it('should update when playlists are added', () => {
@@ -38,40 +55,38 @@ describe('MyPlaylistsSection', () => {
     
     expect(screen.getByText(/No playlists yet/i)).toBeInTheDocument();
 
-    const store = usePlaylistStore.getState();
-    store.createPlaylist('Rock');
+    setPlaylists([makePlaylist('rock', 'Rock')]);
 
     rerender(<MyPlaylistsSection />);
 
     expect(screen.queryByText(/No playlists yet/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
   });
 
   it('should update when playlists are removed', () => {
-    const store = usePlaylistStore.getState();
-    const playlist = store.createPlaylist('Rock');
+    setPlaylists([makePlaylist('rock', 'Rock')]);
 
     const { rerender } = render(<MyPlaylistsSection />);
     
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
 
-    store.deletePlaylist(playlist.id);
+    setPlaylists([]);
 
     rerender(<MyPlaylistsSection />);
 
-    expect(screen.queryByText('Rock Playlist')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rock Playlist 1')).not.toBeInTheDocument();
     expect(screen.getByText(/No playlists yet/i)).toBeInTheDocument();
   });
 
   it('should display both favorite and non-favorite playlists', () => {
-    const store = usePlaylistStore.getState();
-    const playlist1 = store.createPlaylist('Rock');
-    store.createPlaylist('Jazz');
-    store.toggleFavorite(playlist1.id);
+    setPlaylists([
+      makePlaylist('rock', 'Rock', true),
+      makePlaylist('jazz', 'Jazz'),
+    ]);
 
     render(<MyPlaylistsSection />);
 
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Jazz Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Jazz Playlist 1')).toBeInTheDocument();
   });
 });

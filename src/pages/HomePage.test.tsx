@@ -2,20 +2,27 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { HomePage } from './HomePage';
 import { usePlaylistStore } from '../store';
+import { useAuthStore } from '../store/authStore';
 
 describe('HomePage', () => {
   beforeEach(() => {
-    // Reset store before each test
-    const store = usePlaylistStore.getState();
-    store.playlists.forEach((_, id) => {
-      store.deletePlaylist(id);
+    usePlaylistStore.setState({
+      playlists: new Map(),
+      languagePreference: 'en',
+      isLoading: false,
+      fetchPlaylists: async () => undefined,
+    });
+    useAuthStore.setState({
+      isAuthenticated: true,
+      user: { id: 'user-1', name: 'Test User', email: 'test@example.com' },
+      token: 'test-token',
     });
   });
 
   it('should render the app header', () => {
     render(<HomePage />);
 
-    expect(screen.getByText('Playlist Manager')).toBeInTheDocument();
+    expect(screen.getByText('Harmonia')).toBeInTheDocument();
     expect(screen.getByText(/Your music, perfectly organized/)).toBeInTheDocument();
   });
 
@@ -34,10 +41,12 @@ describe('HomePage', () => {
     expect(screen.getByText('Create Playlist')).toBeInTheDocument();
   });
 
-  it('should render language selector', () => {
+  it('should render account controls', () => {
     render(<HomePage />);
 
-    expect(screen.getByText('Language Preference:')).toBeInTheDocument();
+    expect(screen.getByText('Test User')).toBeInTheDocument();
+    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    expect(screen.getByText('Delete Account')).toBeInTheDocument();
   });
 
   it('should render search panel', () => {
@@ -52,7 +61,7 @@ describe('HomePage', () => {
     expect(container.querySelector('.home-page')).toBeInTheDocument();
     expect(container.querySelector('.app-header')).toBeInTheDocument();
     expect(container.querySelector('.app-container')).toBeInTheDocument();
-    expect(container.querySelector('.main-layout')).toBeInTheDocument();
-    expect(container.querySelector('.sidebar-nav')).toBeInTheDocument();
+    expect(container.querySelector('.toolbar')).toBeInTheDocument();
+    expect(container.querySelector('.tab-nav')).toBeInTheDocument();
   });
 });

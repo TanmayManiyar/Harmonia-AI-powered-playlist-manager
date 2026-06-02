@@ -1,15 +1,31 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { FavoritesSection } from './FavoritesSection';
 import { usePlaylistStore } from '../store';
+import { Playlist } from '../models';
+
+const makePlaylist = (id: string, genre: string, isFavorite = false): Playlist => ({
+  id,
+  name: `${genre} Playlist 1`,
+  genre,
+  songs: [],
+  isFavorite,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
+const setPlaylists = (playlists: Playlist[]) => {
+  act(() => {
+    usePlaylistStore.setState({
+      playlists: new Map(playlists.map((playlist) => [playlist.id, playlist])),
+      isLoading: false,
+    });
+  });
+};
 
 describe('FavoritesSection', () => {
   beforeEach(() => {
-    // Reset store before each test
-    const store = usePlaylistStore.getState();
-    store.playlists.forEach((_, id) => {
-      store.deletePlaylist(id);
-    });
+    setPlaylists([]);
   });
 
   it('should display empty state when no favorites exist', () => {
@@ -20,91 +36,86 @@ describe('FavoritesSection', () => {
   });
 
   it('should display only favorite playlists', () => {
-    const store = usePlaylistStore.getState();
-    const playlist1 = store.createPlaylist('Rock');
-    const playlist2 = store.createPlaylist('Jazz');
-    store.createPlaylist('Pop');
-    
-    store.toggleFavorite(playlist1.id);
-    store.toggleFavorite(playlist2.id);
+    setPlaylists([
+      makePlaylist('rock', 'Rock', true),
+      makePlaylist('jazz', 'Jazz', true),
+      makePlaylist('pop', 'Pop'),
+    ]);
 
     render(<FavoritesSection />);
 
     expect(screen.getByText('Favorites')).toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Jazz Playlist')).toBeInTheDocument();
-    expect(screen.queryByText('Pop Playlist')).not.toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Jazz Playlist 1')).toBeInTheDocument();
+    expect(screen.queryByText('Pop Playlist 1')).not.toBeInTheDocument();
   });
 
   it('should update when favorite status changes', () => {
-    const store = usePlaylistStore.getState();
-    const playlist = store.createPlaylist('Rock');
+    const playlist = makePlaylist('rock', 'Rock');
+    setPlaylists([playlist]);
 
     const { rerender } = render(<FavoritesSection />);
     
     expect(screen.getByText(/No favorite playlists yet/i)).toBeInTheDocument();
 
-    store.toggleFavorite(playlist.id);
+    setPlaylists([{ ...playlist, isFavorite: true }]);
 
     rerender(<FavoritesSection />);
 
     expect(screen.queryByText(/No favorite playlists yet/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
   });
 
   it('should remove playlist when unfavorited', () => {
-    const store = usePlaylistStore.getState();
-    const playlist = store.createPlaylist('Rock');
-    store.toggleFavorite(playlist.id);
+    const playlist = makePlaylist('rock', 'Rock', true);
+    setPlaylists([playlist]);
 
     const { rerender } = render(<FavoritesSection />);
     
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
 
-    store.toggleFavorite(playlist.id);
+    setPlaylists([{ ...playlist, isFavorite: false }]);
 
     rerender(<FavoritesSection />);
 
-    expect(screen.queryByText('Rock Playlist')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rock Playlist 1')).not.toBeInTheDocument();
     expect(screen.getByText(/No favorite playlists yet/i)).toBeInTheDocument();
   });
 
   it('should show empty state when all favorites are removed', () => {
-    const store = usePlaylistStore.getState();
-    const playlist1 = store.createPlaylist('Rock');
-    const playlist2 = store.createPlaylist('Jazz');
-    store.toggleFavorite(playlist1.id);
-    store.toggleFavorite(playlist2.id);
+    const rock = makePlaylist('rock', 'Rock', true);
+    const jazz = makePlaylist('jazz', 'Jazz', true);
+    setPlaylists([rock, jazz]);
 
     const { rerender } = render(<FavoritesSection />);
     
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Jazz Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Jazz Playlist 1')).toBeInTheDocument();
 
-    store.toggleFavorite(playlist1.id);
-    store.toggleFavorite(playlist2.id);
+    setPlaylists([
+      { ...rock, isFavorite: false },
+      { ...jazz, isFavorite: false },
+    ]);
 
     rerender(<FavoritesSection />);
 
-    expect(screen.queryByText('Rock Playlist')).not.toBeInTheDocument();
-    expect(screen.queryByText('Jazz Playlist')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rock Playlist 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Jazz Playlist 1')).not.toBeInTheDocument();
     expect(screen.getByText(/No favorite playlists yet/i)).toBeInTheDocument();
   });
 
   it('should update when favorite playlist is deleted', () => {
-    const store = usePlaylistStore.getState();
-    const playlist = store.createPlaylist('Rock');
-    store.toggleFavorite(playlist.id);
+    setPlaylists([makePlaylist('rock', 'Rock', true)]);
 
     const { rerender } = render(<FavoritesSection />);
     
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
 
-    store.deletePlaylist(playlist.id);
+    setPlaylists([]);
 
     rerender(<FavoritesSection />);
 
-    expect(screen.queryByText('Rock Playlist')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rock Playlist 1')).not.toBeInTheDocument();
     expect(screen.getByText(/No favorite playlists yet/i)).toBeInTheDocument();
   });
 });

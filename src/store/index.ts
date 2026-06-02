@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Playlist, Song } from '../models';
-import { api } from '../services/api';
+import { api, ApiPlaylist } from '../services/api';
 
 /**
  * Application state interface
@@ -31,8 +31,8 @@ interface PlaylistState {
 /**
  * Convert API playlist data to our Playlist model
  */
-const toPlaylist = (data: any): Playlist => ({
-  id: data._id || data.id,
+const toPlaylist = (data: ApiPlaylist): Playlist => ({
+  id: data._id || data.id || '',
   name: data.name,
   genre: data.genre,
   songs: data.songs || [],
@@ -55,7 +55,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       set({ isLoading: true });
       const data = await api.getPlaylists();
       const playlistMap = new Map<string, Playlist>();
-      data.forEach((p: any) => {
+      data.forEach((p) => {
         const playlist = toPlaylist(p);
         playlistMap.set(playlist.id, playlist);
       });

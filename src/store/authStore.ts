@@ -13,6 +13,7 @@ interface AuthState {
   token: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   restoreSession: () => Promise<void>;
 }
@@ -28,7 +29,9 @@ const loadStoredAuth = (): { token: string | null; user: User | null } => {
         return { token: parsed.token, user: parsed.user };
       }
     }
-  } catch {}
+    } catch {
+      return { token: null, user: null };
+    }
   return { token: null, user: null };
 };
 
@@ -67,6 +70,17 @@ export const useAuthStore = create<AuthState>((set) => {
         return { success: true };
       } catch (error: any) {
         return { success: false, error: error.message || 'Registration failed' };
+      }
+    },
+
+    deleteAccount: async () => {
+      try {
+        await api.deleteAccount();
+        clearAuth();
+        set({ isAuthenticated: false, user: null, token: null });
+        return { success: true };
+      } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to delete account' };
       }
     },
 

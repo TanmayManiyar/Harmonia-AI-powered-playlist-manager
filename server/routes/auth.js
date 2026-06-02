@@ -2,6 +2,9 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
+import Playlist from '../models/Playlist.js';
+import { authenticate } from '../middleware/authenticate.js';
+import { isNonEmptyString, normalizeString } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -15,17 +18,21 @@ const signToken = (userId) => jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: 
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
+    const normalizedEmail = normalizeString(email).toLowerCase();
 
-    if (!email || !password) {
+    if (!normalizedEmail || !isNonEmptyString(password)) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
+    if (name !== undefined && !isNonEmptyString(name)) {
+      return res.status(400).json({ error: 'Name must not be empty' });
+    }
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(400).json({ error: 'An account with this email already exists' });
     }
 
-    const userName = name || email.split('@')[0]
+    const userName = normalizeString(name) || normalizedEmail.split('@')[0]
       .replace(/[._-]/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -34,7 +41,7 @@ router.post('/register', async (req, res) => {
 
     const user = await User.create({
       name: userName,
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       password: hashedPassword,
     });
 
@@ -53,12 +60,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = normalizeString(email).toLowerCase();
 
-    if (!email || !password) {
+    if (!normalizedEmail || !isNonEmptyString(password)) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -80,16 +88,9 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', async (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(req.userId).select('-password');
 
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
@@ -98,6 +99,32 @@ router.get('/me', async (req, res) => {
     res.json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// DELETE /api/auth/account — permanently delete user account and all data
+router.delete('/account', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete all playlists belonging to this user
+    const deletedPlaylists = await Playlist.deleteMany({ userId: userId.toString() });
+
+    // Delete the user account
+    await User.findByIdAndDelete(userId);
+
+    res.json({
+      message: 'Account and all data deleted successfully',
+      deletedPlaylists: deletedPlaylists.deletedCount,
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 

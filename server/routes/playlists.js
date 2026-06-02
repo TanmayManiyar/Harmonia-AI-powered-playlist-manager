@@ -1,26 +1,9 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import Playlist from '../models/Playlist.js';
+import { authenticate } from '../middleware/authenticate.js';
+import { isNonEmptyString, normalizeString, parseSongList, isSongInput, normalizeSong, escapeRegExp } from '../utils/validation.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
-
-// Auth middleware
-const authenticate = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 router.use(authenticate);
 
@@ -39,27 +22,37 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, genre, songs } = req.body;
+    const playlistGenre = normalizeString(genre);
 
-    if (!genre) {
+    if (!playlistGenre) {
       return res.status(400).json({ error: 'Genre is required' });
     }
 
+    if (name !== undefined && !isNonEmptyString(name)) {
+      return res.status(400).json({ error: 'Playlist name must not be empty' });
+    }
+
+    const parsedSongs = parseSongList(songs, playlistGenre);
+    if (parsedSongs === null) {
+      return res.status(400).json({ error: 'Songs must be an array of valid song objects' });
+    }
+
     // Auto-number: count existing playlists of this genre for this user
-    let playlistName = name;
+    let playlistName = normalizeString(name);
     if (!playlistName) {
       const existingCount = await Playlist.countDocuments({
         userId: req.userId,
-        genre: { $regex: new RegExp(`^${genre}$`, 'i') },
+        genre: { $regex: new RegExp(`^${escapeRegExp(playlistGenre)}$`, 'i') },
       });
       const number = existingCount + 1;
-      playlistName = `${genre} Playlist ${number}`;
+      playlistName = `${playlistGenre} Playlist ${number}`;
     }
 
     const playlist = await Playlist.create({
       userId: req.userId,
       name: playlistName,
-      genre,
-      songs: songs || [],
+      genre: playlistGenre,
+      songs: parsedSongs,
     });
 
     res.status(201).json(playlist);
@@ -78,9 +71,25 @@ router.put('/:id', async (req, res) => {
     }
 
     const { name, isFavorite, songs } = req.body;
-    if (name !== undefined) playlist.name = name;
-    if (isFavorite !== undefined) playlist.isFavorite = isFavorite;
-    if (songs !== undefined) playlist.songs = songs;
+    if (name !== undefined) {
+      if (!isNonEmptyString(name)) {
+        return res.status(400).json({ error: 'Playlist name must not be empty' });
+      }
+      playlist.name = normalizeString(name);
+    }
+    if (isFavorite !== undefined) {
+      if (typeof isFavorite !== 'boolean') {
+        return res.status(400).json({ error: 'isFavorite must be a boolean' });
+      }
+      playlist.isFavorite = isFavorite;
+    }
+    if (songs !== undefined) {
+      const parsedSongs = parseSongList(songs, playlist.genre);
+      if (parsedSongs === null) {
+        return res.status(400).json({ error: 'Songs must be an array of valid song objects' });
+      }
+      playlist.songs = parsedSongs;
+    }
 
     await playlist.save();
     res.json(playlist);
@@ -99,16 +108,17 @@ router.post('/:id/songs', async (req, res) => {
     }
 
     const song = req.body;
-    if (!song.title || !song.artist) {
+    if (!isSongInput(song)) {
       return res.status(400).json({ error: 'Song title and artist are required' });
     }
+    const normalizedSong = normalizeSong(song, playlist.genre);
 
-    const exists = playlist.songs.some((s) => s.id === song.id);
+    const exists = playlist.songs.some((s) => s.id === normalizedSong.id);
     if (exists) {
       return res.status(400).json({ error: 'Song already in playlist' });
     }
 
-    playlist.songs.push(song);
+    playlist.songs.push(normalizedSong);
     await playlist.save();
     res.json(playlist);
   } catch (error) {

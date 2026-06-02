@@ -1,15 +1,31 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { GenreSection } from './GenreSection';
 import { usePlaylistStore } from '../store';
+import { Playlist } from '../models';
+
+const makePlaylist = (id: string, genre: string, name = `${genre} Playlist 1`, isFavorite = false): Playlist => ({
+  id,
+  name,
+  genre,
+  songs: [],
+  isFavorite,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
+const setPlaylists = (playlists: Playlist[]) => {
+  act(() => {
+    usePlaylistStore.setState({
+      playlists: new Map(playlists.map((playlist) => [playlist.id, playlist])),
+      isLoading: false,
+    });
+  });
+};
 
 describe('GenreSection', () => {
   beforeEach(() => {
-    // Reset store before each test
-    const store = usePlaylistStore.getState();
-    store.playlists.forEach((_, id) => {
-      store.deletePlaylist(id);
-    });
+    setPlaylists([]);
   });
 
   it('should display empty state when no playlists exist', () => {
@@ -20,10 +36,11 @@ describe('GenreSection', () => {
   });
 
   it('should display playlists grouped by genre', () => {
-    const store = usePlaylistStore.getState();
-    store.createPlaylist('Rock');
-    store.createPlaylist('Jazz');
-    store.createPlaylist('Pop');
+    setPlaylists([
+      makePlaylist('rock', 'Rock'),
+      makePlaylist('jazz', 'Jazz'),
+      makePlaylist('pop', 'Pop'),
+    ]);
 
     render(<GenreSection />);
 
@@ -31,17 +48,18 @@ describe('GenreSection', () => {
     expect(screen.getByText('Rock')).toBeInTheDocument();
     expect(screen.getByText('Jazz')).toBeInTheDocument();
     expect(screen.getByText('Pop')).toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Jazz Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Pop Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Jazz Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Pop Playlist 1')).toBeInTheDocument();
   });
 
   it('should sort genre groups alphabetically', () => {
-    const store = usePlaylistStore.getState();
-    store.createPlaylist('Rock');
-    store.createPlaylist('Jazz');
-    store.createPlaylist('Pop');
-    store.createPlaylist('Blues');
+    setPlaylists([
+      makePlaylist('rock', 'Rock'),
+      makePlaylist('jazz', 'Jazz'),
+      makePlaylist('pop', 'Pop'),
+      makePlaylist('blues', 'Blues'),
+    ]);
 
     const { container } = render(<GenreSection />);
 
@@ -52,16 +70,11 @@ describe('GenreSection', () => {
   });
 
   it('should sort playlists alphabetically within each genre', () => {
-    const store = usePlaylistStore.getState();
-    // Create playlists with different genres
-    const playlist1 = store.createPlaylist('Rock');
-    const playlist2 = store.createPlaylist('Jazz');
-    const playlist3 = store.createPlaylist('Blues');
-    
-    // Rename them to verify alphabetical sorting
-    store.updatePlaylistName(playlist3.id, 'AAA Blues');
-    store.updatePlaylistName(playlist2.id, 'ZZZ Jazz');
-    store.updatePlaylistName(playlist1.id, 'MMM Rock');
+    setPlaylists([
+      makePlaylist('rock', 'Rock', 'MMM Rock'),
+      makePlaylist('jazz', 'Jazz', 'ZZZ Jazz'),
+      makePlaylist('blues', 'Blues', 'AAA Blues'),
+    ]);
 
     const { container } = render(<GenreSection />);
 
@@ -81,41 +94,37 @@ describe('GenreSection', () => {
     
     expect(screen.getByText(/No playlists yet/i)).toBeInTheDocument();
 
-    const store = usePlaylistStore.getState();
-    store.createPlaylist('Rock');
+    setPlaylists([makePlaylist('rock', 'Rock')]);
 
     rerender(<GenreSection />);
 
     expect(screen.queryByText(/No playlists yet/i)).not.toBeInTheDocument();
     expect(screen.getByText('Rock')).toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
   });
 
   it('should update when playlists are removed', () => {
-    const store = usePlaylistStore.getState();
-    const playlist = store.createPlaylist('Rock');
+    setPlaylists([makePlaylist('rock', 'Rock')]);
 
     const { rerender } = render(<GenreSection />);
     
     expect(screen.getByText('Rock')).toBeInTheDocument();
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
 
-    store.deletePlaylist(playlist.id);
+    setPlaylists([]);
 
     rerender(<GenreSection />);
 
     expect(screen.queryByText('Rock')).not.toBeInTheDocument();
-    expect(screen.queryByText('Rock Playlist')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rock Playlist 1')).not.toBeInTheDocument();
     expect(screen.getByText(/No playlists yet/i)).toBeInTheDocument();
   });
 
   it('should display multiple playlists in the same genre', () => {
-    const store = usePlaylistStore.getState();
-    const playlist1 = store.createPlaylist('Rock');
-    const playlist2 = store.createPlaylist('Jazz');
-    
-    store.updatePlaylistName(playlist1.id, 'Rock Classics');
-    store.updatePlaylistName(playlist2.id, 'Jazz Standards');
+    setPlaylists([
+      makePlaylist('rock', 'Rock', 'Rock Classics'),
+      makePlaylist('jazz', 'Jazz', 'Jazz Standards'),
+    ]);
 
     render(<GenreSection />);
 
@@ -126,14 +135,14 @@ describe('GenreSection', () => {
   });
 
   it('should show both favorite and non-favorite playlists', () => {
-    const store = usePlaylistStore.getState();
-    const playlist1 = store.createPlaylist('Rock');
-    const playlist2 = store.createPlaylist('Jazz');
-    store.toggleFavorite(playlist1.id);
+    setPlaylists([
+      makePlaylist('rock', 'Rock', 'Rock Playlist 1', true),
+      makePlaylist('jazz', 'Jazz'),
+    ]);
 
     render(<GenreSection />);
 
-    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
-    expect(screen.getByText('Jazz Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Rock Playlist 1')).toBeInTheDocument();
+    expect(screen.getByText('Jazz Playlist 1')).toBeInTheDocument();
   });
 });

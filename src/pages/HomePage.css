@@ -122,6 +122,46 @@
   background: rgba(239, 68, 68, 0.08);
 }
 
+.delete-account-button {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
+  color: rgba(239, 68, 68, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.delete-account-button:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+}
+
+.delete-error-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  font-size: 14px;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  z-index: 2000;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeIn var(--transition-fast);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
 /* Container */
 .app-container {
   max-width: 1400px;

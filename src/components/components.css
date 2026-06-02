@@ -27,14 +27,22 @@
 
 .playlist-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
   cursor: pointer;
   user-select: none;
 }
 
+.playlist-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .playlist-title-section {
   flex: 1;
+  min-width: 0;
 }
 
 .playlist-title {
@@ -107,7 +115,9 @@
 
 .playlist-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 /* ============================================
@@ -116,13 +126,13 @@
 .yt-sync-button {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  gap: 4px;
+  padding: 4px 8px;
   background: rgba(255, 0, 0, 0.12);
   color: #ff4444;
   border: 1px solid rgba(255, 0, 0, 0.25);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   font-family: 'Outfit', sans-serif;
   cursor: pointer;
@@ -158,7 +168,7 @@
 }
 
 .yt-sync-label {
-  font-size: 11px;
+  font-size: 10px;
 }
 
 @keyframes pulse {
@@ -190,11 +200,12 @@
 .favorite-button {
   background: none;
   border: none;
-  font-size: 22px;
+  font-size: 18px;
   cursor: pointer;
   color: var(--text-dim);
   transition: all var(--transition-fast);
   padding: 4px;
+  line-height: 1;
 }
 
 .favorite-button:hover {
@@ -228,6 +239,20 @@
   transition: all var(--transition-fast);
   font-size: 13px;
   font-family: 'Outfit', sans-serif;
+}
+
+/* Smaller variants for playlist card inline buttons */
+.playlist-actions .play-button,
+.playlist-actions .rename-button,
+.playlist-actions .delete-button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.playlist-actions .delete-button {
+  padding: 4px 8px;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .play-button {
@@ -1187,17 +1212,12 @@
    ============================================ */
 @media (max-width: 768px) {
   .playlist-card {
-    padding: 18px;
-  }
-
-  .playlist-header {
-    flex-direction: column;
-    gap: 10px;
+    padding: 14px;
   }
 
   .playlist-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .genre-input-group {

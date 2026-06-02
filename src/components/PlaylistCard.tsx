@@ -137,26 +137,28 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, isExpanded
   return (
     <div className={`playlist-card ${isExpanded ? 'expanded' : 'collapsed'}`}>
       <div className="playlist-header" onClick={() => !isEditing && onToggle(playlist.id)}>
-        <div className="playlist-title-section">
-          {isEditing ? (
-            <div className="playlist-edit" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="text"
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                className="playlist-name-input"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-              />
-              <button onClick={handleSaveEdit} className="save-button">Save</button>
-              <button onClick={handleCancelEdit} className="cancel-button">Cancel</button>
-            </div>
-          ) : (
-            <div className="playlist-title">
-              <span className={`expand-icon ${isExpanded ? 'open' : ''}`}>▶</span>
-              <h3>{playlist.name}</h3>
-            </div>
-          )}
+        <div className="playlist-header-top">
+          <div className="playlist-title-section">
+            {isEditing ? (
+              <div className="playlist-edit" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="playlist-name-input"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                />
+                <button onClick={handleSaveEdit} className="save-button">Save</button>
+                <button onClick={handleCancelEdit} className="cancel-button">Cancel</button>
+              </div>
+            ) : (
+              <div className="playlist-title">
+                <span className={`expand-icon ${isExpanded ? 'open' : ''}`}>▶</span>
+                <h3>{playlist.name}</h3>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="playlist-actions" onClick={(e) => e.stopPropagation()}>
