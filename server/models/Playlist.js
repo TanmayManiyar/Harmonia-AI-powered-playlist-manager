@@ -18,6 +18,7 @@ const playlistSchema = new mongoose.Schema({
   songs: [songSchema],
   isFavorite: { type: Boolean, default: false },
   shareId: { type: String, default: null, index: true, unique: true, sparse: true },
+  playCount: { type: Number, default: 0, index: true },
 }, { timestamps: true });
 
 export default mongoose.model('Playlist', playlistSchema);

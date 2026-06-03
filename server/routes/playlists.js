@@ -24,6 +24,49 @@ router.get('/shared/:shareId', async (req, res) => {
   }
 });
 
+// GET /api/playlists/discover — popular playlists across other users
+router.get('/discover', async (req, res) => {
+  try {
+    const popular = await Playlist.find({
+      userId: { $ne: req.userId },
+      'songs.0': { $exists: true },
+    })
+      .sort({ playCount: -1, createdAt: -1 })
+      .limit(18);
+
+    const ownerIds = [...new Set(popular.map((p) => p.userId))];
+    const owners = await User.find({ _id: { $in: ownerIds } }).select('name');
+    const nameById = Object.fromEntries(owners.map((o) => [o._id.toString(), o.name]));
+
+    const withOwner = popular.map((p) => ({
+      ...p.toObject(),
+      ownerName: nameById[p.userId] || 'A Harmonia user',
+    }));
+
+    const byGenreMap = new Map();
+    for (const p of withOwner) {
+      if (!byGenreMap.has(p.genre)) byGenreMap.set(p.genre, []);
+      byGenreMap.get(p.genre).push(p);
+    }
+    const byGenre = [...byGenreMap.entries()].map(([genre, playlists]) => ({ genre, playlists }));
+
+    res.json({ popular: withOwner, byGenre });
+  } catch (error) {
+    console.error('Discover error:', error);
+    res.status(500).json({ error: 'Failed to load discover' });
+  }
+});
+
+// POST /api/playlists/:id/played — bump popularity (any signed-in user)
+router.post('/:id/played', async (req, res) => {
+  try {
+    await Playlist.findByIdAndUpdate(req.params.id, { $inc: { playCount: 1 } });
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to record play' });
+  }
+});
+
 // GET /api/playlists
 router.get('/', async (req, res) => {
   try {

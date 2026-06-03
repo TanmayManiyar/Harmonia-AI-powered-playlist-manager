@@ -110,13 +110,15 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
 
   const playableCount = playlist.songs.filter(isPlayable).length;
 
-  const recordPlayed = () =>
+  const recordPlayed = () => {
     recordRecentlyPlayed({
       id: playlist.id,
       name: playlist.name,
       genre: playlist.genre,
       songs: playlist.songs,
     });
+    api.markPlayed(playlist.id);
+  };
 
   const handlePlayAll = () => {
     const queued = playQueue(playlist.songs, 0);

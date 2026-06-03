@@ -3,6 +3,7 @@ import { Heart, Play } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore } from '../store/playerStore';
+import { api } from '../services/api';
 import { PlaylistCover } from './PlaylistCover';
 import { recordRecentlyPlayed } from '../lib/recentlyPlayed';
 import { cn } from '../lib/utils';
@@ -36,6 +37,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen, in
         genre: playlist.genre,
         songs: playlist.songs,
       });
+      api.markPlayed(playlist.id);
     }
   };
 

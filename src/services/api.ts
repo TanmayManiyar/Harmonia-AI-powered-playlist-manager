@@ -201,6 +201,23 @@ class ApiClient {
       `/playlists/shared/${encodeURIComponent(shareId)}`
     );
   }
+
+  // Discover / popularity
+  async getDiscover() {
+    return this.request<{
+      popular: DiscoverPlaylist[];
+      byGenre: { genre: string; playlists: DiscoverPlaylist[] }[];
+    }>('/playlists/discover');
+  }
+
+  markPlayed(playlistId: string) {
+    // Fire-and-forget popularity bump
+    return this.request(`/playlists/${playlistId}/played`, { method: 'POST' }).catch(() => undefined);
+  }
+}
+
+export interface DiscoverPlaylist extends ApiPlaylist {
+  ownerName: string;
 }
 
 export const api = new ApiClient();

@@ -11,6 +11,7 @@ import { PlayerBar } from '../components/player/PlayerBar';
 import { NowPlayingPanel } from '../components/player/NowPlayingPanel';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { usePlayerStore, isPlayable } from '../store/playerStore';
+import { recordRecentlyPlayed } from '../lib/recentlyPlayed';
 
 export const SharedPlaylistPage: React.FC = () => {
   const { shareId } = useParams<{ shareId: string }>();
@@ -40,6 +41,15 @@ export const SharedPlaylistPage: React.FC = () => {
 
   const songs: Song[] = playlist?.songs ?? [];
   const playableCount = songs.filter(isPlayable).length;
+
+  const playFrom = (i: number) => {
+    if (!playlist) return;
+    if (playQueue(songs, i) > 0) {
+      const id = playlist._id || playlist.id || '';
+      recordRecentlyPlayed({ id, name: playlist.name, genre: playlist.genre, songs });
+      if (id) api.markPlayed(id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-paper">
@@ -96,7 +106,7 @@ export const SharedPlaylistPage: React.FC = () => {
                   variant="accent"
                   className="mt-4"
                   disabled={playableCount === 0}
-                  onClick={() => playQueue(songs, 0)}
+                  onClick={() => playFrom(0)}
                 >
                   <Play size={16} /> Play all
                 </Button>
@@ -113,7 +123,7 @@ export const SharedPlaylistPage: React.FC = () => {
                     song={song}
                     showRemoveButton={false}
                     isActive={song.id === playingSongId}
-                    onPlay={() => playQueue(songs, i)}
+                    onPlay={() => playFrom(i)}
                   />
                 ))
               )}

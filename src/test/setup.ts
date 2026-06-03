@@ -135,5 +135,11 @@ vi.mock('../services/api', () => ({
     async searchSongs() {
       return []
     },
+    async getDiscover() {
+      return { popular: [], byGenre: [] }
+    },
+    markPlayed() {
+      return Promise.resolve(undefined)
+    },
   },
 }))
