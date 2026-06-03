@@ -17,8 +17,15 @@ const playlistSchema = new mongoose.Schema({
   genre: { type: String, required: true },
   songs: [songSchema],
   isFavorite: { type: Boolean, default: false },
-  shareId: { type: String, default: null, index: true, unique: true, sparse: true },
+  shareId: { type: String },
   playCount: { type: Number, default: 0, index: true },
 }, { timestamps: true });
+
+// Unique only among actual string shareIds — absent/null playlists are
+// excluded, so many unshared playlists never collide.
+playlistSchema.index(
+  { shareId: 1 },
+  { unique: true, partialFilterExpression: { shareId: { $type: 'string' } } }
+);
 
 export default mongoose.model('Playlist', playlistSchema);

@@ -8,29 +8,29 @@
    accent = grape (violet); acid/bubble/ice are playful pops.
    ============================================================ */
 :root {
-  --paper: #fbf7ef;
-  --paper-2: #f1e9d7;
-  --surface: #ffffff;
-  --surface-2: #fbf7ef;
-  --ink: #15121c;
-  --ink-soft: #423d57;
-  --muted: #756f86;
-  --line: #e7dfcd;
-  --line-strong: #d6cbb1;
+  --paper: #f4f2ec;
+  --paper-2: #eae6dc;
+  --surface: #fffdf8;
+  --surface-2: #f7f4ec;
+  --ink: #221d2e;
+  --ink-soft: #4e4863;
+  --muted: #7c7689;
+  --line: #e3ddd0;
+  --line-strong: #cec5b3;
 
   --grape: #7c3aed;
-  --acid: #b8e600;
-  --bubble: #ff2e88;
-  --ice: #06b6d4;
+  --acid: #aee000;
+  --bubble: #f5337f;
+  --ice: #0bb6d6;
 
   --accent: var(--grape);
   --accent-ink: #6d28d9;
   --accent-contrast: #ffffff;
-  --danger: #ff2e6e;
+  --danger: #ef2d68;
 
-  --shadow: 0 1px 2px rgba(21, 18, 28, 0.05), 0 10px 26px rgba(21, 18, 28, 0.08);
-  --shadow-lg: 0 6px 16px rgba(21, 18, 28, 0.1), 0 28px 60px rgba(124, 58, 237, 0.14);
-  --shadow-pop: 4px 4px 0 0 var(--ink);
+  --shadow: 0 1px 2px rgba(34, 29, 46, 0.04), 0 8px 22px rgba(34, 29, 46, 0.06);
+  --shadow-lg: 0 6px 16px rgba(34, 29, 46, 0.08), 0 26px 56px rgba(124, 58, 237, 0.1);
+  --shadow-pop: 3px 3px 0 0 rgba(34, 29, 46, 0.78);
 }
 
 [data-theme='dark'] {

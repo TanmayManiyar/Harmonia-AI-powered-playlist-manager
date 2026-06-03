@@ -63,14 +63,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const content = (
     <>
       <div className="flex items-center justify-between px-2 pb-6">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded bg-accent font-display text-base font-bold text-accent-contrast">
+        <button
+          onClick={() => { onSelectView('home'); setMobileOpen(false); }}
+          className="flex items-center gap-2.5"
+          aria-label="Go to home"
+        >
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent font-display text-base font-bold text-accent-contrast">
             H
           </span>
-          <span className="font-display text-lg font-semibold tracking-tight text-ink">
+          <span className="font-display text-lg font-bold tracking-tight text-ink">
             Harmonia
           </span>
-        </div>
+        </button>
         <button
           className="grid h-8 w-8 place-items-center rounded text-muted hover:bg-paper-2 hover:text-ink lg:hidden"
           onClick={() => setMobileOpen(false)}

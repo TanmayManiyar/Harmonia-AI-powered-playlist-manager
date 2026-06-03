@@ -3,6 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 
+import Playlist from './models/Playlist.js';
 import authRoutes from './routes/auth.js';
 import playlistRoutes from './routes/playlists.js';
 import youtubeRoutes from './routes/youtube.js';
@@ -40,10 +41,17 @@ app.get('/api/health', (req, res) => {
 // Connect to MongoDB and start server
 mongoose
   .connect(MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ Connected to MongoDB at', MONGODB_URI);
     console.log('📊 Open MongoDB Compass → connect to: ' + MONGODB_URI);
     console.log('   Database: playlist-manager | Collections: users, playlists');
+    // Replace the legacy unique-sparse shareId index (which collided on null)
+    // with the new partial index defined on the schema.
+    try {
+      await Playlist.syncIndexes();
+    } catch (err) {
+      console.error('⚠️  Index sync warning:', err.message);
+    }
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });

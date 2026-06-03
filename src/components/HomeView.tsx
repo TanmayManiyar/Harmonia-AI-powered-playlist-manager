@@ -67,6 +67,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const [forYou, setForYou] = useState<SuggestedPlaylist[]>([]);
   const [forYouLoading, setForYouLoading] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [moodText, setMoodText] = useState('');
+  const [moodLoading, setMoodLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
@@ -121,6 +123,21 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       setSavedIds((prev) => new Set(prev).add(p.id));
     } catch {
       /* ignore */
+    }
+  };
+
+  const cookMood = async () => {
+    const mood = moodText.trim();
+    if (!mood || moodLoading) return;
+    setMoodLoading(true);
+    try {
+      await api.chatWithAI(`A playlist for this exact vibe: ${mood}. Match the energy and mood closely.`, mood, 'Mood');
+      await fetchPlaylists();
+      setMoodText('');
+    } catch {
+      /* ignore */
+    } finally {
+      setMoodLoading(false);
     }
   };
 
@@ -241,6 +258,22 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
       <section className="mb-10">
         <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">pick a vibe 🎟️</h2>
+        <div className="mb-5 flex flex-wrap gap-2.5">
+          <input
+            value={moodText}
+            onChange={(e) => setMoodText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && cookMood()}
+            placeholder="type any mood… rainy day, heartbreak, gym 🏋️, 3am drive"
+            className="min-w-56 flex-1 rounded-full border-2 border-line-strong bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+          />
+          <button
+            onClick={cookMood}
+            disabled={moodLoading || !moodText.trim()}
+            className="rounded-full bg-accent px-5 text-sm font-semibold text-accent-contrast shadow-[0_4px_0_0_rgba(0,0,0,0.22)] transition-all hover:brightness-110 hover:translate-y-0.5 hover:shadow-[0_2px_0_0_rgba(0,0,0,0.22)] active:scale-95 disabled:opacity-50"
+          >
+            {moodLoading ? 'cooking…' : 'cook it 🍳'}
+          </button>
+        </div>
         <BrowseGrid groups={HOME_BROWSE} limitPerGroup={4} />
       </section>
 
