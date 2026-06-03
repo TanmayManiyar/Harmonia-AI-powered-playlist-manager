@@ -1,20 +1,22 @@
 import React from 'react';
-import { Music, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
-import './components.css';
+import { PlaylistCover } from './PlaylistCover';
+import { cn } from '../lib/utils';
 
 interface PlaylistCardProps {
   playlist: Playlist;
   onOpen: (id: string) => void;
+  index?: number;
 }
 
 /**
- * PlaylistCard — a compact glass tile. Tapping it opens the full
- * PlaylistDetailModal; the favorite heart toggles inline without opening.
+ * PlaylistCard — an editorial glass-free tile. Tapping opens the detail
+ * modal; the heart toggles favorite inline.
  */
-export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen }) => {
-  const toggleFavorite = usePlaylistStore((state) => state.toggleFavorite);
+export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen, index }) => {
+  const toggleFavorite = usePlaylistStore((s) => s.toggleFavorite);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -23,24 +25,31 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen }) 
 
   return (
     <button
-      className="playlist-tile glass"
+      className="playlist-tile group flex flex-col overflow-hidden rounded-md border border-line bg-surface text-left shadow-[var(--shadow)] transition-all duration-200 hover:-translate-y-1 hover:border-line-strong hover:shadow-[var(--shadow-lg)]"
       onClick={() => onOpen(playlist.id)}
       aria-label={`Open ${playlist.name}`}
     >
-      <div className="tile-cover">
-        <Music size={28} strokeWidth={2} />
+      <div className="relative">
+        <PlaylistCover
+          name={playlist.name}
+          genre={playlist.genre}
+          index={index}
+          className="aspect-[4/3] w-full"
+        />
         <span
-          className={`tile-fav ${playlist.isFavorite ? 'active' : ''}`}
           onClick={handleFavorite}
           role="button"
           aria-label={playlist.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          className={cn(
+            'absolute right-2.5 top-2.5 grid h-8 w-8 place-items-center rounded-full border border-line bg-surface/90 backdrop-blur transition-colors hover:bg-surface',
+            playlist.isFavorite ? 'text-accent-ink' : 'text-muted'
+          )}
         >
-          <Heart size={16} fill={playlist.isFavorite ? 'currentColor' : 'none'} />
+          <Heart size={15} fill={playlist.isFavorite ? 'currentColor' : 'none'} />
         </span>
       </div>
-      <div className="tile-body">
-        <h3 className="tile-name">{playlist.name}</h3>
-        <p className="tile-meta">
+      <div className="px-3.5 py-3">
+        <p className="tile-meta text-xs text-muted">
           {playlist.genre} · {playlist.songs.length} songs
         </p>
       </div>

@@ -1,266 +1,130 @@
-/* ============================================================
-   Harmonia — Glassmorphism Design System
-   Dark theme is the default (:root). Light theme via [data-theme="light"].
-   Every component references these tokens — no hardcoded colors.
-   ============================================================ */
+@import 'tailwindcss';
 
+/* Dark theme keys off a data-theme attribute on <html> */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ============================================================
+   Editorial theme tokens — light "paper" (default) + dark
+   ============================================================ */
 :root {
-  /* ---- Accent palette (shared across themes) ---- */
-  --accent-violet: #8b5cf6;
-  --accent-fuchsia: #ec4899;
-  --accent-cyan: #06b6d4;
-  --accent-emerald: #10b981;
-
-  --accent-primary: var(--accent-violet);
-  --accent-secondary: var(--accent-fuchsia);
-
-  --accent-success: #22c55e;
-  --accent-warning: #f59e0b;
-  --accent-danger: #f43f5e;
-
-  --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-  --gradient-cool: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
-  --gradient-vivid: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #06b6d4 100%);
-
-  /* ---- Border radius ---- */
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --radius-full: 9999px;
-
-  /* ---- Transitions ---- */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --paper: #faf9f6; /* page background */
+  --paper-2: #f3f1ea; /* sunken areas */
+  --surface: #ffffff; /* cards, panels */
+  --surface-2: #fbfaf7;
+  --ink: #14130f; /* primary text */
+  --ink-soft: #45423b; /* secondary text */
+  --muted: #78736a; /* tertiary text */
+  --line: #e4e0d6; /* hairline borders */
+  --line-strong: #d3cdbf;
+  --accent: #c4623b; /* terracotta */
+  --accent-ink: #9c4a2a; /* darker terracotta for text-on-paper */
+  --accent-contrast: #ffffff; /* text on accent fills */
+  --danger: #b4322b;
+  --shadow: 0 1px 2px rgba(20, 19, 15, 0.04), 0 8px 24px rgba(20, 19, 15, 0.06);
+  --shadow-lg: 0 4px 12px rgba(20, 19, 15, 0.08), 0 24px 56px rgba(20, 19, 15, 0.12);
 }
 
-/* ============================================================
-   DARK THEME (default)
-   ============================================================ */
-:root,
 [data-theme='dark'] {
-  --bg-base: #0a0a0f;
-  --bg-deep: #06060a;
-
-  /* Glass surfaces */
-  --glass-surface: rgba(255, 255, 255, 0.06);
-  --glass-surface-strong: rgba(255, 255, 255, 0.1);
-  --glass-surface-hover: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-strong: rgba(255, 255, 255, 0.2);
-  --glass-blur: 18px;
-
-  /* Accent-tinted glass (for active/selected states) */
-  --glass-accent: rgba(139, 92, 246, 0.18);
-  --glass-accent-border: rgba(139, 92, 246, 0.4);
-
-  /* Text */
-  --text-primary: #f5f3ff;
-  --text-secondary: #c4b5fd;
-  --text-muted: #9ca3af;
-  --text-dim: #6b7280;
-  --text-on-accent: #ffffff;
-
-  /* Shadows */
-  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 32px rgba(139, 92, 246, 0.3);
-
-  /* Blob opacity / blend */
-  --blob-opacity: 0.55;
-  --blob-blend: screen;
-
-  color-scheme: dark;
+  --paper: #0e0e0c;
+  --paper-2: #161513;
+  --surface: #1a1916;
+  --surface-2: #201e1a;
+  --ink: #f2efe7;
+  --ink-soft: #cbc6bb;
+  --muted: #938d81;
+  --line: #2c2a25;
+  --line-strong: #3a382f;
+  --accent: #d4744a;
+  --accent-ink: #e08a60;
+  --accent-contrast: #14130f;
+  --danger: #e2685f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.6);
 }
 
-/* ============================================================
-   LIGHT THEME — violet-tinted frost
-   ============================================================ */
-[data-theme='light'] {
-  --bg-base: #f5f3ff;
-  --bg-deep: #ece9fb;
+/* Map tokens into Tailwind's theme (inline = resolves var() live, so
+   utilities like bg-surface / text-ink react to data-theme switches) */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-danger: var(--danger);
 
-  --glass-surface: rgba(255, 255, 255, 0.55);
-  --glass-surface-strong: rgba(255, 255, 255, 0.72);
-  --glass-surface-hover: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(139, 92, 246, 0.18);
-  --glass-border-strong: rgba(139, 92, 246, 0.32);
-  --glass-blur: 18px;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  --glass-accent: rgba(139, 92, 246, 0.16);
-  --glass-accent-border: rgba(139, 92, 246, 0.45);
+  --radius-sm: 3px;
+  --radius-DEFAULT: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
-  --text-primary: #1e1b4b;
-  --text-secondary: #6d28d9;
-  --text-muted: #6b7280;
-  --text-dim: #9ca3af;
-  --text-on-accent: #ffffff;
-
-  --shadow-sm: 0 2px 10px rgba(91, 33, 182, 0.08);
-  --shadow-md: 0 8px 28px rgba(91, 33, 182, 0.12);
-  --shadow-lg: 0 16px 48px rgba(91, 33, 182, 0.16);
-  --shadow-glow: 0 0 32px rgba(139, 92, 246, 0.25);
-
-  --blob-opacity: 0.45;
-  --blob-blend: multiply;
-
-  color-scheme: light;
+  --shadow-card: var(--shadow);
+  --shadow-pop: var(--shadow-lg);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv05', 'ss01';
+    line-height: 1.55;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+
+  /* Thin, restrained scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+    background-clip: padding-box;
+  }
 }
 
-html,
-body {
-  height: 100%;
-}
-
-body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    'Roboto', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  line-height: 1.6;
-  overflow-x: hidden;
-  transition: background var(--transition-base), color var(--transition-base);
-}
-
-#root {
-  min-height: 100vh;
-}
-
-/* ---- Reusable glass mixin via utility class ---- */
-.glass {
-  background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
-}
-
-/* ---- Scrollbar ---- */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--glass-border-strong);
-  border-radius: var(--radius-full);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-violet);
-  background-clip: padding-box;
-}
-
-::selection {
-  background: rgba(139, 92, 246, 0.4);
-  color: #fff;
-}
-
-/* ============================================================
-   Animations
-   ============================================================ */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-16px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes modalIn {
-  from { opacity: 0; transform: scale(0.94) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Organic blob drift — four distinct paths */
-@keyframes float1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(60px, -40px) scale(1.1); }
-  66% { transform: translate(-30px, 30px) scale(0.95); }
-}
-
-@keyframes float2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-50px, 40px) scale(1.05); }
-  66% { transform: translate(40px, -20px) scale(1.1); }
-}
-
-@keyframes float3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-60px, -50px) scale(1.15); }
-}
-
-@keyframes float4 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(50px, 50px) scale(0.9); }
-}
-
-/* ---- Utility classes ---- */
-.fade-in { animation: fadeIn var(--transition-base) ease-out; }
-.slide-in { animation: slideIn var(--transition-base) ease-out; }
-.scale-in { animation: scaleIn var(--transition-base) ease-out; }
-
-.spin { animation: spin 0.9s linear infinite; }
-
-/* ---- Focus styles ---- */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid var(--accent-violet);
-  outline-offset: 2px;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
-
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
-/* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

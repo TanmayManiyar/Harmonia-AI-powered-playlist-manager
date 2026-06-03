@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  MonitorPlay,
-  Play,
-  Pencil,
-  Heart,
-  Trash2,
-  Check,
-  Loader2,
-  Music,
-} from 'lucide-react';
+import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2 } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
 import { SongItem } from './SongItem';
 import { Modal } from './Modal';
 import { ConfirmationDialog } from './ConfirmationDialog';
-import './components.css';
+import { PlaylistCover } from './PlaylistCover';
+import { Button } from './ui/button';
 
 interface PlaylistDetailModalProps {
   playlist: Playlist | null;
@@ -25,10 +17,6 @@ interface PlaylistDetailModalProps {
 
 type SyncState = 'idle' | 'syncing' | 'success' | 'error';
 
-/**
- * PlaylistDetailModal — full playlist view in a centered glass modal.
- * Owns rename, favorite, delete, remove-song, YouTube sync, and play-all.
- */
 export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   playlist,
   isOpen,
@@ -41,12 +29,11 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   const [syncMessage, setSyncMessage] = useState('');
   const [ytConnected, setYtConnected] = useState<boolean | null>(null);
 
-  const toggleFavorite = usePlaylistStore((state) => state.toggleFavorite);
-  const updatePlaylistName = usePlaylistStore((state) => state.updatePlaylistName);
-  const deletePlaylist = usePlaylistStore((state) => state.deletePlaylist);
-  const removeSongFromPlaylist = usePlaylistStore((state) => state.removeSongFromPlaylist);
+  const toggleFavorite = usePlaylistStore((s) => s.toggleFavorite);
+  const updatePlaylistName = usePlaylistStore((s) => s.updatePlaylistName);
+  const deletePlaylist = usePlaylistStore((s) => s.deletePlaylist);
+  const removeSongFromPlaylist = usePlaylistStore((s) => s.removeSongFromPlaylist);
 
-  // Reset transient state whenever a different playlist is opened
   useEffect(() => {
     if (playlist) setEditedName(playlist.name);
     setIsEditing(false);
@@ -54,7 +41,6 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
     setSyncMessage('');
   }, [playlist]);
 
-  // Check YouTube connection status when the modal opens
   useEffect(() => {
     if (!isOpen) return;
     api
@@ -67,9 +53,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
 
   const handleSaveEdit = () => {
     const trimmed = editedName.trim();
-    if (trimmed && trimmed !== playlist.name) {
-      updatePlaylistName(playlist.id, trimmed);
-    }
+    if (trimmed && trimmed !== playlist.name) updatePlaylistName(playlist.id, trimmed);
     setIsEditing(false);
   };
 
@@ -79,114 +63,107 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
     onClose();
   };
 
+  const flash = (status: SyncState, message: string) => {
+    setSyncStatus(status);
+    setSyncMessage(message);
+    setTimeout(() => {
+      setSyncStatus('idle');
+      setSyncMessage('');
+    }, 5000);
+  };
+
   const handleSyncToYouTube = async () => {
     if (!ytConnected) {
       try {
         await api.startYouTubeOAuth();
       } catch (error: any) {
-        setSyncStatus('error');
-        setSyncMessage(error.message || 'Failed to start YouTube authorization');
-        setTimeout(() => {
-          setSyncStatus('idle');
-          setSyncMessage('');
-        }, 5000);
+        flash('error', error.message || 'Failed to start YouTube authorization');
       }
       return;
     }
-
     setSyncStatus('syncing');
     setSyncMessage('Creating YouTube playlist...');
-
     try {
       const result = await api.syncPlaylistToYouTube(playlist.id);
-      setSyncStatus('success');
-      setSyncMessage(`Synced! ${result.addedCount} songs added to YouTube.`);
-      if (result.youtubePlaylistUrl) {
-        window.open(result.youtubePlaylistUrl, '_blank');
-      }
-      setTimeout(() => {
-        setSyncStatus('idle');
-        setSyncMessage('');
-      }, 5000);
+      flash('success', `Synced! ${result.addedCount} songs added to YouTube.`);
+      if (result.youtubePlaylistUrl) window.open(result.youtubePlaylistUrl, '_blank');
     } catch (error: any) {
-      setSyncStatus('error');
       if (error.message?.includes('expired') || error.message?.includes('reconnect')) {
         setYtConnected(false);
-        setSyncMessage('YouTube connection expired. Click to reconnect.');
+        flash('error', 'YouTube connection expired. Click to reconnect.');
       } else {
-        setSyncMessage(error.message || 'Sync failed');
+        flash('error', error.message || 'Sync failed');
       }
-      setTimeout(() => {
-        setSyncStatus('idle');
-        setSyncMessage('');
-      }, 5000);
     }
   };
 
-  const handlePlayOnYouTube = () => {
-    const validVideoIds = playlist.songs.map((song) => song.youtubeId).filter(Boolean);
-    if (validVideoIds.length === 0) {
-      setSyncMessage('No playable YouTube videos in this playlist.');
-      setTimeout(() => setSyncMessage(''), 4000);
+  const handlePlayAll = () => {
+    const ids = playlist.songs.map((s) => s.youtubeId).filter(Boolean);
+    if (ids.length === 0) {
+      flash('error', 'No playable YouTube videos in this playlist.');
       return;
     }
-    const limitIds = validVideoIds.slice(0, 50).join(',');
-    window.open(`https://www.youtube.com/watch_videos?video_ids=${limitIds}`, '_blank');
+    window.open(
+      `https://www.youtube.com/watch_videos?video_ids=${ids.slice(0, 50).join(',')}`,
+      '_blank'
+    );
   };
 
   const languages = [...new Set(playlist.songs.map((s) => s.language).filter(Boolean))].join(', ');
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="lg" className="playlist-modal">
-        <div className="pm-header">
-          <div className="pm-cover">
-            <Music size={32} />
-          </div>
-          <div className="pm-heading">
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <div className="mb-5 flex items-start gap-4">
+          <PlaylistCover
+            name={playlist.name}
+            genre={playlist.genre}
+            variant="thumb"
+            className="h-20 w-20 flex-shrink-0 rounded-md"
+          />
+          <div className="min-w-0 flex-1">
             {isEditing ? (
-              <div className="pm-edit">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 <input
-                  type="text"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
-                  className="pm-name-input"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                  className="min-w-48 flex-1 rounded border border-line-strong bg-surface px-3 py-1.5 font-display text-lg font-semibold text-ink focus:border-accent focus:outline-none"
                 />
-                <button onClick={handleSaveEdit} className="btn btn--primary btn--sm">
-                  Save
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="btn btn--ghost btn--sm"
-                >
-                  Cancel
-                </button>
+                <Button size="sm" variant="accent" onClick={handleSaveEdit}>Save</Button>
+                <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
               </div>
             ) : (
-              <h2 className="pm-title">{playlist.name}</h2>
+              <h2 className="mb-1.5 break-words font-display text-2xl font-semibold leading-tight text-ink">
+                {playlist.name}
+              </h2>
             )}
-            <div className="pm-meta">
-              <span className="pm-genre-badge">{playlist.genre}</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+              <span className="rounded-full border border-line bg-paper-2 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-ink-soft">
+                {playlist.genre}
+              </span>
               <span>{playlist.songs.length} songs</span>
-              {languages && <span>{languages}</span>}
+              {languages && <span>· {languages}</span>}
             </div>
           </div>
         </div>
 
-        <div className="pm-actions">
-          <button
-            className={`btn btn--yt ${syncStatus}`}
+        <div className="mb-5 flex flex-wrap gap-2 border-b border-line pb-5">
+          <Button variant="accent" onClick={handlePlayAll}>
+            <Play size={16} /> Play all
+          </Button>
+          <Button
+            variant="outline"
             onClick={handleSyncToYouTube}
             disabled={syncStatus === 'syncing'}
           >
             {syncStatus === 'syncing' ? (
-              <Loader2 size={18} className="spin" />
+              <Loader2 size={16} className="animate-spin" />
             ) : syncStatus === 'success' ? (
-              <Check size={18} />
+              <Check size={16} />
             ) : (
-              <MonitorPlay size={18} />
+              <MonitorPlay size={16} />
             )}
             {syncStatus === 'syncing'
               ? 'Syncing...'
@@ -195,36 +172,41 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
                 : ytConnected
                   ? 'Sync to YouTube'
                   : 'Connect YouTube'}
-          </button>
-          <button className="btn btn--primary" onClick={handlePlayOnYouTube}>
-            <Play size={18} />
-            Play all
-          </button>
-          <button className="btn btn--ghost" onClick={() => setIsEditing(true)}>
-            <Pencil size={18} />
-            Rename
-          </button>
-          <button
-            className={`btn btn--ghost ${playlist.isFavorite ? 'is-fav' : ''}`}
+          </Button>
+          <Button variant="ghost" onClick={() => setIsEditing(true)}>
+            <Pencil size={16} /> Rename
+          </Button>
+          <Button
+            variant="ghost"
             onClick={() => toggleFavorite(playlist.id)}
+            className={playlist.isFavorite ? 'text-accent-ink' : ''}
           >
-            <Heart size={18} fill={playlist.isFavorite ? 'currentColor' : 'none'} />
+            <Heart size={16} fill={playlist.isFavorite ? 'currentColor' : 'none'} />
             {playlist.isFavorite ? 'Favorited' : 'Favorite'}
-          </button>
-          <button
-            className="btn btn--ghost btn--danger"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 size={18} />
-            Delete
-          </button>
+          </Button>
+          <Button variant="danger" onClick={() => setShowDeleteDialog(true)}>
+            <Trash2 size={16} /> Delete
+          </Button>
         </div>
 
-        {syncMessage && <div className={`pm-sync-msg ${syncStatus}`}>{syncMessage}</div>}
+        {syncMessage && (
+          <div
+            className={
+              'mb-4 rounded border px-3 py-2 text-sm ' +
+              (syncStatus === 'error'
+                ? 'border-danger/40 text-danger'
+                : syncStatus === 'success'
+                  ? 'border-accent/40 text-accent-ink'
+                  : 'border-line text-ink-soft')
+            }
+          >
+            {syncMessage}
+          </div>
+        )}
 
-        <div className="pm-songs">
+        <div className="flex flex-col gap-1.5">
           {playlist.songs.length === 0 ? (
-            <p className="empty-message">No songs in this playlist yet.</p>
+            <p className="py-8 text-center text-sm text-muted">No songs in this playlist yet.</p>
           ) : (
             playlist.songs.map((song) => (
               <SongItem

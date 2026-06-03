@@ -60,6 +60,5 @@ describe('HomePage', () => {
     expect(container.querySelector('.home-page')).toBeInTheDocument();
     expect(container.querySelector('.sidebar')).toBeInTheDocument();
     expect(container.querySelector('.canvas')).toBeInTheDocument();
-    expect(container.querySelector('.blobs')).toBeInTheDocument();
   });
 });

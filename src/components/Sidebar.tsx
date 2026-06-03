@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Music,
   Library,
   Heart,
-  Music2,
+  Disc3,
   Plus,
   Search,
   Sparkles,
@@ -12,10 +12,10 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import './layout.css';
+import { cn } from '../lib/utils';
 
 export type ViewId = 'library' | 'favorites' | 'genres';
-export type ActionId = 'create' | 'search' | 'ai';
+export type ActionId = 'create' | 'search' | 'ai' | 'venues';
 
 interface SidebarProps {
   activeView: ViewId;
@@ -27,16 +27,24 @@ interface SidebarProps {
 }
 
 const VIEWS: { id: ViewId; label: string; icon: React.ReactNode }[] = [
-  { id: 'library', label: 'Library', icon: <Library size={20} /> },
-  { id: 'favorites', label: 'Favorites', icon: <Heart size={20} /> },
-  { id: 'genres', label: 'Genres', icon: <Music2 size={20} /> },
+  { id: 'library', label: 'Library', icon: <Library size={18} /> },
+  { id: 'favorites', label: 'Favorites', icon: <Heart size={18} /> },
+  { id: 'genres', label: 'Genres', icon: <Disc3 size={18} /> },
 ];
 
 const ACTIONS: { id: ActionId; label: string; icon: React.ReactNode }[] = [
-  { id: 'create', label: 'Create', icon: <Plus size={20} /> },
-  { id: 'search', label: 'Search', icon: <Search size={20} /> },
-  { id: 'ai', label: 'AI Chat', icon: <Sparkles size={20} /> },
+  { id: 'create', label: 'Create', icon: <Plus size={18} /> },
+  { id: 'search', label: 'Search', icon: <Search size={18} /> },
+  { id: 'ai', label: 'AI Chat', icon: <Sparkles size={18} /> },
 ];
+
+const navItemClass = (active: boolean) =>
+  cn(
+    'group flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors',
+    active
+      ? 'bg-paper-2 text-ink'
+      : 'text-ink-soft hover:bg-paper-2 hover:text-ink'
+  );
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeView,
@@ -48,101 +56,133 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleSelectView = (view: ViewId) => {
-    onSelectView(view);
-    setMobileOpen(false);
-  };
+  const content = (
+    <>
+      <div className="flex items-center justify-between px-2 pb-6">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded bg-accent font-display text-base font-bold text-accent-contrast">
+            H
+          </span>
+          <span className="font-display text-lg font-semibold tracking-tight text-ink">
+            Harmonia
+          </span>
+        </div>
+        <button
+          className="grid h-8 w-8 place-items-center rounded text-muted hover:bg-paper-2 hover:text-ink lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close menu"
+        >
+          <X size={18} />
+        </button>
+      </div>
 
-  const handleOpenAction = (action: ActionId) => {
-    onOpenAction(action);
-    setMobileOpen(false);
-  };
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
+        <span className="px-3 pb-1.5 pt-2 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted">
+          Browse
+        </span>
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            className={navItemClass(activeView === v.id)}
+            onClick={() => {
+              onSelectView(v.id);
+              setMobileOpen(false);
+            }}
+          >
+            <span className={cn(activeView === v.id ? 'text-accent-ink' : 'text-muted group-hover:text-ink-soft')}>
+              {v.icon}
+            </span>
+            {v.label}
+          </button>
+        ))}
+
+        <span className="px-3 pb-1.5 pt-5 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted">
+          Actions
+        </span>
+        {ACTIONS.map((a) => (
+          <button
+            key={a.id}
+            className={navItemClass(false)}
+            onClick={() => {
+              onOpenAction(a.id);
+              setMobileOpen(false);
+            }}
+          >
+            <span className="text-muted group-hover:text-ink-soft">{a.icon}</span>
+            {a.label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="mt-4 border-t border-line pt-3">
+        {userName && (
+          <div className="flex items-center gap-2.5 px-3 py-2">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-accent text-xs font-semibold text-accent-contrast">
+              {userName.charAt(0).toUpperCase()}
+            </span>
+            <span className="truncate text-sm font-medium text-ink">{userName}</span>
+          </div>
+        )}
+        <button
+          className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-paper-2 hover:text-ink"
+          onClick={onLogout}
+        >
+          <LogOut size={17} className="text-muted" />
+          Sign Out
+        </button>
+        <button
+          className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-danger/10 hover:text-danger"
+          onClick={onDeleteAccount}
+        >
+          <Trash2 size={17} />
+          Delete Account
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <>
-      {/* Mobile top bar with hamburger */}
-      <div className="mobile-bar glass">
+      {/* Mobile top bar */}
+      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-line bg-paper/90 px-4 py-3 backdrop-blur lg:hidden">
         <button
-          className="mobile-menu-btn"
+          className="grid h-9 w-9 place-items-center rounded text-ink hover:bg-paper-2"
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
         >
-          <Menu size={22} />
+          <Menu size={20} />
         </button>
-        <div className="mobile-brand">
-          <Music size={20} className="brand-icon" />
-          <span>Harmonia</span>
-        </div>
+        <span className="font-display text-base font-semibold text-ink">Harmonia</span>
       </div>
 
-      {/* Backdrop for mobile drawer */}
-      {mobileOpen && (
-        <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
-      )}
-
-      <aside className={`sidebar glass ${mobileOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="brand">
-            <span className="brand-logo">
-              <Music size={22} strokeWidth={2.5} />
-            </span>
-            <div className="brand-text">
-              <h1>Harmonia</h1>
-              <p>Your music, organized</p>
-            </div>
-          </div>
-          <button
-            className="sidebar-close"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close menu"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <nav className="sidebar-nav">
-          <span className="nav-label">Views</span>
-          {VIEWS.map((view) => (
-            <button
-              key={view.id}
-              className={`nav-item ${activeView === view.id ? 'active' : ''}`}
-              onClick={() => handleSelectView(view.id)}
-            >
-              <span className="nav-icon">{view.icon}</span>
-              {view.label}
-            </button>
-          ))}
-
-          <span className="nav-label">Actions</span>
-          {ACTIONS.map((action) => (
-            <button
-              key={action.id}
-              className={`nav-item ${action.id === 'ai' ? 'nav-item--ai' : ''}`}
-              onClick={() => handleOpenAction(action.id)}
-            >
-              <span className="nav-icon">{action.icon}</span>
-              {action.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          {userName && (
-            <div className="sidebar-user">
-              <div className="user-avatar">{userName.charAt(0).toUpperCase()}</div>
-              <span className="user-name">{userName}</span>
-            </div>
-          )}
-          <button className="footer-btn" onClick={onLogout}>
-            <LogOut size={18} />
-            Sign Out
-          </button>
-          <button className="footer-btn footer-btn--danger" onClick={onDeleteAccount}>
-            <Trash2 size={18} />
-            Delete Account
-          </button>
-        </div>
+      {/* Desktop rail */}
+      <aside className="sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-paper px-3 py-5 lg:flex">
+        {content}
       </aside>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 bg-ink/30 lg:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.aside
+              className="sidebar fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-line bg-paper px-3 py-5 lg:hidden"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {content}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 };

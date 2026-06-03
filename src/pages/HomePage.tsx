@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Sidebar,
-  ViewId,
-  ActionId,
-} from '../components/Sidebar';
+import { Sidebar, ViewId, ActionId } from '../components/Sidebar';
 import {
   MyPlaylistsSection,
   FavoritesSection,
@@ -13,41 +9,28 @@ import {
   AIChatPanel,
   ConfirmationDialog,
   Modal,
-  Blobs,
   ThemeToggle,
 } from '../components';
 import { useAuthStore } from '../store/authStore';
 import { usePlaylistStore } from '../store';
-import './HomePage.css';
 
 export const HomePage: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewId>('library');
   const [activeAction, setActiveAction] = useState<ActionId | null>(null);
 
-  // Delete account — two-step confirmation
   const [showDeleteStep1, setShowDeleteStep1] = useState(false);
   const [showDeleteStep2, setShowDeleteStep2] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const deleteAccount = useAuthStore((state) => state.deleteAccount);
-  const fetchPlaylists = usePlaylistStore((state) => state.fetchPlaylists);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
 
   useEffect(() => {
     fetchPlaylists();
   }, [fetchPlaylists]);
-
-  const handleDeleteAccountClick = () => {
-    setDeleteError('');
-    setShowDeleteStep1(true);
-  };
-
-  const handleStep1Confirm = () => {
-    setShowDeleteStep1(false);
-    setShowDeleteStep2(true);
-  };
 
   const handleStep2Confirm = async () => {
     setIsDeleting(true);
@@ -60,82 +43,64 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  const handleCancelDelete = () => {
+  const closeDelete = () => {
     setShowDeleteStep1(false);
     setShowDeleteStep2(false);
     setDeleteError('');
   };
 
   return (
-    <div className="home-page">
-      <Blobs />
-
+    <div className="home-page min-h-screen bg-paper">
       <Sidebar
         activeView={activeView}
         onSelectView={setActiveView}
         onOpenAction={setActiveAction}
         userName={user?.name ?? ''}
         onLogout={logout}
-        onDeleteAccount={handleDeleteAccountClick}
+        onDeleteAccount={() => { setDeleteError(''); setShowDeleteStep1(true); }}
       />
 
-      <main className="canvas">
-        <div className="canvas-inner fade-in" key={activeView}>
+      <main className="canvas px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
+        <div key={activeView} className="mx-auto max-w-[1180px] motion-safe:animate-[fadeIn_.28s_ease-out]">
           {activeView === 'library' && <MyPlaylistsSection />}
           {activeView === 'favorites' && <FavoritesSection />}
           {activeView === 'genres' && <GenreSection />}
         </div>
       </main>
 
-      {/* Action modals */}
-      <Modal
-        isOpen={activeAction === 'create'}
-        onClose={() => setActiveAction(null)}
-        title="Create Playlist"
-      >
+      <Modal isOpen={activeAction === 'create'} onClose={() => setActiveAction(null)} title="Create Playlist">
         <PlaylistCreationPanel />
       </Modal>
-
-      <Modal
-        isOpen={activeAction === 'search'}
-        onClose={() => setActiveAction(null)}
-        title="Search Songs"
-      >
+      <Modal isOpen={activeAction === 'search'} onClose={() => setActiveAction(null)} title="Search Songs">
         <SearchPanel />
       </Modal>
-
-      <Modal
-        isOpen={activeAction === 'ai'}
-        onClose={() => setActiveAction(null)}
-        size="lg"
-      >
+      <Modal isOpen={activeAction === 'ai'} onClose={() => setActiveAction(null)} size="lg">
         <AIChatPanel />
       </Modal>
 
-      {/* Delete error toast */}
       {deleteError && (
-        <div className="delete-error-toast glass" onClick={() => setDeleteError('')}>
-          ⚠️ {deleteError}
+        <div
+          className="fixed bottom-6 left-1/2 z-[90] -translate-x-1/2 cursor-pointer rounded-md border border-danger/40 bg-surface px-5 py-3 text-sm font-medium text-danger shadow-[var(--shadow-lg)]"
+          onClick={() => setDeleteError('')}
+        >
+          {deleteError}
         </div>
       )}
 
-      {/* Step 1: Initial confirmation */}
       <ConfirmationDialog
         isOpen={showDeleteStep1}
         message="Are you sure you want to delete your account? This will permanently remove your account and ALL your playlists from Harmonia. This action cannot be undone."
-        onConfirm={handleStep1Confirm}
-        onCancel={handleCancelDelete}
+        onConfirm={() => { setShowDeleteStep1(false); setShowDeleteStep2(true); }}
+        onCancel={closeDelete}
         confirmText="Yes, I want to delete"
         cancelText="Cancel"
       />
-
-      {/* Step 2: Final confirmation */}
       <ConfirmationDialog
         isOpen={showDeleteStep2}
         message={`FINAL WARNING: This is your last chance. Your account "${user?.name}" and all associated data will be permanently deleted. Are you absolutely sure?`}
         onConfirm={handleStep2Confirm}
-        onCancel={handleCancelDelete}
-        confirmText={isDeleting ? 'Deleting...' : 'Delete permanently'}
+        onCancel={closeDelete}
+        confirmText={isDeleting ? 'Deleting…' : 'Delete permanently'}
         cancelText="No, keep my account"
       />
 

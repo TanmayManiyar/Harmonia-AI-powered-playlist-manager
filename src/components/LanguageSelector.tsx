@@ -1,14 +1,14 @@
 import React from 'react';
 import { usePlaylistStore } from '../store';
-import './components.css';
 
 /**
- * LanguageSelector component - Interface for selecting language preference
+ * LanguageSelector — sets the language preference in the playlist store.
  */
 export const LanguageSelector: React.FC = () => {
-  const { languagePreference, setLanguagePreference } = usePlaylistStore();
+  const languagePreference = usePlaylistStore((s) => s.languagePreference);
+  const setLanguagePreference = usePlaylistStore((s) => s.setLanguagePreference);
 
-  const commonLanguages = [
+  const languages = [
     { code: '', label: 'All Languages' },
     { code: 'English', label: 'English' },
     { code: 'Hindi', label: 'Hindi' },
@@ -23,23 +23,19 @@ export const LanguageSelector: React.FC = () => {
     { code: 'Instrumental', label: 'Instrumental' },
   ];
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLanguagePreference(e.target.value);
-  };
-
   return (
-    <div className="language-selector">
-      <label htmlFor="language-select">Language Preference:</label>
+    <div className="flex items-center gap-2.5">
+      <label htmlFor="language-select" className="text-sm font-medium text-ink-soft">
+        Language Preference:
+      </label>
       <select
         id="language-select"
         value={languagePreference}
-        onChange={handleLanguageChange}
-        className="language-dropdown"
+        onChange={(e) => setLanguagePreference(e.target.value)}
+        className="rounded border border-line-strong bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
       >
-        {commonLanguages.map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {lang.label}
-          </option>
+        {languages.map((l) => (
+          <option key={l.code} value={l.code}>{l.label}</option>
         ))}
       </select>
     </div>

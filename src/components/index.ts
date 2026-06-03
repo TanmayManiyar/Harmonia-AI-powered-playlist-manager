@@ -13,5 +13,4 @@ export { FavoritesSection } from './FavoritesSection';
 export { GenreSection } from './GenreSection';
 export { AIChatPanel } from './AIChatPanel';
 export { Sidebar } from './Sidebar';
-export { Blobs } from './Blobs';
 export { ThemeToggle } from './ThemeToggle';
