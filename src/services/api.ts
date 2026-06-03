@@ -15,6 +15,7 @@ export interface ApiPlaylist {
   genre: string;
   songs: Song[];
   isFavorite?: boolean;
+  shareId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -184,6 +185,21 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ venue, count }),
     });
+  }
+
+  // Sharing
+  async createShareLink(playlistId: string) {
+    return this.request<{ shareId: string }>(`/playlists/${playlistId}/share`, { method: 'POST' });
+  }
+
+  async revokeShareLink(playlistId: string) {
+    return this.request<{ message: string }>(`/playlists/${playlistId}/share`, { method: 'DELETE' });
+  }
+
+  async getSharedPlaylist(shareId: string) {
+    return this.request<{ playlist: ApiPlaylist; ownerName: string }>(
+      `/playlists/shared/${encodeURIComponent(shareId)}`
+    );
   }
 }
 

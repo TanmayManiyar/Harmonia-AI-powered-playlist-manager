@@ -3,11 +3,16 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, ChevronUp, Music } from 'l
 import { usePlayerStore } from '../../store/playerStore';
 import { formatTime, cn } from '../../lib/utils';
 
+interface PlayerBarProps {
+  /** Offset for the desktop sidebar (home view). */
+  inset?: boolean;
+}
+
 /**
  * PlayerBar — persistent bottom playback bar. Click the track / chevron to
  * expand the now-playing side panel.
  */
-export const PlayerBar: React.FC = () => {
+export const PlayerBar: React.FC<PlayerBarProps> = ({ inset = false }) => {
   const current = usePlayerStore((s) => s.queue[s.index] ?? null);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -26,7 +31,7 @@ export const PlayerBar: React.FC = () => {
   const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-line bg-surface/95 backdrop-blur lg:left-64">
+    <div className={cn('fixed inset-x-0 bottom-0 z-[70] border-t border-line bg-surface/95 backdrop-blur', inset && 'lg:left-64')}>
       {/* progress scrubber spanning the top edge */}
       <input
         type="range"

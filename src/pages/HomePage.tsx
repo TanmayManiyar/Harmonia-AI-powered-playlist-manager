@@ -115,7 +115,7 @@ export const HomePage: React.FC = () => {
       <CommandPalette onSelectView={setActiveView} onOpenAction={setActiveAction} />
 
       <PlayerHost />
-      <PlayerBar />
+      <PlayerBar inset />
       <NowPlayingPanel />
       <ThemeToggle />
     </div>

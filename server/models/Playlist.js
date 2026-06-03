@@ -17,6 +17,7 @@ const playlistSchema = new mongoose.Schema({
   genre: { type: String, required: true },
   songs: [songSchema],
   isFavorite: { type: Boolean, default: false },
+  shareId: { type: String, default: null, index: true, unique: true, sparse: true },
 }, { timestamps: true });
 
 export default mongoose.model('Playlist', playlistSchema);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical } from 'lucide-react';
+import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical, Share2 } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore, isPlayable } from '../store/playerStore';
@@ -132,6 +132,21 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
     reorderSongs(playlist.id, from, target);
   };
 
+  const handleShare = async () => {
+    try {
+      const { shareId } = await api.createShareLink(playlist.id);
+      const url = `${window.location.origin}/p/${shareId}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        flash('success', 'Share link copied to clipboard');
+      } catch {
+        flash('success', url);
+      }
+    } catch (error: any) {
+      flash('error', error.message || 'Failed to create share link');
+    }
+  };
+
   const languages = [...new Set(playlist.songs.map((s) => s.language).filter(Boolean))].join(', ');
 
   return (
@@ -198,6 +213,9 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
                 : ytConnected
                   ? 'Sync to YouTube'
                   : 'Connect YouTube'}
+          </Button>
+          <Button variant="ghost" onClick={handleShare}>
+            <Share2 size={16} /> Share
           </Button>
           <Button variant="ghost" onClick={() => setIsEditing(true)}>
             <Pencil size={16} /> Rename
