@@ -19,6 +19,7 @@ export const NowPlayingPanel: React.FC = () => {
   const next = usePlayerStore((s) => s.next);
   const prev = usePlayerStore((s) => s.prev);
   const playAt = usePlayerStore((s) => s.playAt);
+  const clearUpNext = usePlayerStore((s) => s.clearUpNext);
 
   const current = queue[index] ?? null;
 
@@ -78,9 +79,19 @@ export const NowPlayingPanel: React.FC = () => {
             </div>
 
             <div className="mt-7 flex min-h-0 flex-1 flex-col px-3 pb-4">
-              <span className="px-2 pb-2 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted">
-                Up Next
-              </span>
+              <div className="flex items-center justify-between px-2 pb-2">
+                <span className="text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                  Up Next
+                </span>
+                {index < queue.length - 1 && (
+                  <button
+                    onClick={clearUpNext}
+                    className="text-[0.7rem] font-medium text-muted transition-colors hover:text-danger"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
               <div className="flex-1 overflow-y-auto">
                 {queue.map((song, i) => (
                   <button

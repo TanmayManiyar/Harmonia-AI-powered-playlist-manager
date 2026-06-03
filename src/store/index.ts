@@ -17,6 +17,7 @@ interface PlaylistState {
   deletePlaylist: (playlistId: string) => Promise<void>;
   addSongToPlaylist: (playlistId: string, song: Song) => Promise<void>;
   removeSongFromPlaylist: (playlistId: string, songId: string) => Promise<void>;
+  reorderSongs: (playlistId: string, fromIndex: number, toIndex: number) => Promise<void>;
   toggleFavorite: (playlistId: string) => Promise<void>;
   updatePlaylistName: (playlistId: string, name: string) => Promise<void>;
   setLanguagePreference: (language: string) => void;
@@ -116,6 +117,38 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       newPlaylists.set(playlist.id, playlist);
       return { playlists: newPlaylists };
     });
+  },
+
+  reorderSongs: async (playlistId: string, fromIndex: number, toIndex: number) => {
+    const playlist = get().playlists.get(playlistId);
+    if (!playlist) return;
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    if (fromIndex >= playlist.songs.length || toIndex >= playlist.songs.length) return;
+
+    const songs = [...playlist.songs];
+    const [moved] = songs.splice(fromIndex, 1);
+    if (!moved) return;
+    songs.splice(toIndex, 0, moved);
+
+    // Optimistic local update
+    set((state) => {
+      const newPlaylists = new Map(state.playlists);
+      newPlaylists.set(playlistId, { ...playlist, songs });
+      return { playlists: newPlaylists };
+    });
+
+    try {
+      const data = await api.updatePlaylist(playlistId, { songs });
+      const updated = toPlaylist(data);
+      set((state) => {
+        const newPlaylists = new Map(state.playlists);
+        newPlaylists.set(updated.id, updated);
+        return { playlists: newPlaylists };
+      });
+    } catch (error) {
+      console.error('Failed to reorder songs:', error);
+      await get().fetchPlaylists(); // revert to server truth
+    }
   },
 
   toggleFavorite: async (playlistId: string) => {

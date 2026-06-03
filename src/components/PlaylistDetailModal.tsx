@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore, isPlayable } from '../store/playerStore';
@@ -9,6 +9,7 @@ import { Modal } from './Modal';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { PlaylistCover } from './PlaylistCover';
 import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 
 interface PlaylistDetailModalProps {
   playlist: Playlist | null;
@@ -34,9 +35,14 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   const updatePlaylistName = usePlaylistStore((s) => s.updatePlaylistName);
   const deletePlaylist = usePlaylistStore((s) => s.deletePlaylist);
   const removeSongFromPlaylist = usePlaylistStore((s) => s.removeSongFromPlaylist);
+  const reorderSongs = usePlaylistStore((s) => s.reorderSongs);
 
   const playQueue = usePlayerStore((s) => s.playQueue);
+  const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playingSongId = usePlayerStore((s) => s.queue[s.index]?.id ?? null);
+
+  const dragIndex = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   useEffect(() => {
     if (playlist) setEditedName(playlist.name);
@@ -113,6 +119,19 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
     if (idx >= 0) playQueue(playlist.songs, idx);
   };
 
+  const handleQueueAll = () => {
+    const added = addToQueue(playlist.songs);
+    if (added === 0) flash('error', 'No playable tracks to queue.');
+  };
+
+  const handleDrop = (target: number) => {
+    const from = dragIndex.current;
+    dragIndex.current = null;
+    setDragOver(null);
+    if (from == null || from === target) return;
+    reorderSongs(playlist.id, from, target);
+  };
+
   const languages = [...new Set(playlist.songs.map((s) => s.language).filter(Boolean))].join(', ');
 
   return (
@@ -156,6 +175,9 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
         <div className="mb-5 flex flex-wrap gap-2 border-b border-line pb-5">
           <Button variant="accent" onClick={handlePlayAll} disabled={playableCount === 0}>
             <Play size={16} /> Play all
+          </Button>
+          <Button variant="outline" onClick={handleQueueAll} disabled={playableCount === 0}>
+            <ListPlus size={16} /> Queue
           </Button>
           <Button
             variant="outline"
@@ -212,14 +234,28 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
           {playlist.songs.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">No songs in this playlist yet.</p>
           ) : (
-            playlist.songs.map((song) => (
-              <SongItem
+            playlist.songs.map((song, i) => (
+              <div
                 key={song.id}
-                song={song}
-                isActive={song.id === playingSongId}
-                onPlay={() => handlePlaySong(song.id)}
-                onRemove={(songId) => removeSongFromPlaylist(playlist.id, songId)}
-              />
+                draggable
+                onDragStart={() => { dragIndex.current = i; }}
+                onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
+                onDragOver={(e) => { e.preventDefault(); if (dragOver !== i) setDragOver(i); }}
+                onDrop={() => handleDrop(i)}
+                className={cn('flex items-center gap-1 rounded', dragOver === i && 'bg-paper-2 ring-1 ring-accent/30')}
+              >
+                <span className="cursor-grab px-1 text-muted active:cursor-grabbing" aria-hidden="true">
+                  <GripVertical size={15} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <SongItem
+                    song={song}
+                    isActive={song.id === playingSongId}
+                    onPlay={() => handlePlaySong(song.id)}
+                    onRemove={(songId) => removeSongFromPlaylist(playlist.id, songId)}
+                  />
+                </div>
+              </div>
             ))
           )}
         </div>
