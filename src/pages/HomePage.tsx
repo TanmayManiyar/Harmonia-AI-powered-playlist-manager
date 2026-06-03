@@ -8,6 +8,7 @@ import {
   SearchPanel,
   AIChatPanel,
   VenuesPanel,
+  CommandPalette,
   ConfirmationDialog,
   Modal,
   ThemeToggle,
@@ -110,6 +111,8 @@ export const HomePage: React.FC = () => {
         confirmText={isDeleting ? 'Deleting…' : 'Delete permanently'}
         cancelText="No, keep my account"
       />
+
+      <CommandPalette onSelectView={setActiveView} onOpenAction={setActiveAction} />
 
       <PlayerHost />
       <PlayerBar />
