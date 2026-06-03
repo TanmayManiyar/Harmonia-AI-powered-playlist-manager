@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  House,
   Library,
   Heart,
   Disc3,
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-export type ViewId = 'library' | 'favorites' | 'genres';
+export type ViewId = 'home' | 'library' | 'favorites' | 'genres';
 export type ActionId = 'create' | 'search' | 'ai' | 'venues';
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ interface SidebarProps {
 }
 
 const VIEWS: { id: ViewId; label: string; icon: React.ReactNode }[] = [
+  { id: 'home', label: 'Home', icon: <House size={18} /> },
   { id: 'library', label: 'Library', icon: <Library size={18} /> },
   { id: 'favorites', label: 'Favorites', icon: <Heart size={18} /> },
   { id: 'genres', label: 'Genres', icon: <Disc3 size={18} /> },

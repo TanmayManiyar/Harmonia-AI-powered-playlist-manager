@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
-import { LoginPage } from './pages/LoginPage';
+import { LandingPage } from './pages/LandingPage';
 import { SharedPlaylistPage } from './pages/SharedPlaylistPage';
+import { AuthModal } from './components';
 import { useAuthStore } from './store/authStore';
 
 const REDIRECT_KEY = 'playlist-manager:redirect';
 
-/** Remember where the user was headed, then bounce to login. */
+/** Remember where the user was headed, then send them to the landing/login. */
 function RequireLoginRedirect() {
   const location = useLocation();
   try {
@@ -15,21 +16,7 @@ function RequireLoginRedirect() {
   } catch {
     /* ignore */
   }
-  return <Navigate to="/login" replace />;
-}
-
-/** After login, return to the saved destination (or home). */
-function takeRedirect(): string {
-  try {
-    const dest = sessionStorage.getItem(REDIRECT_KEY);
-    if (dest) {
-      sessionStorage.removeItem(REDIRECT_KEY);
-      return dest;
-    }
-  } catch {
-    /* ignore */
-  }
-  return '/';
+  return <Navigate to="/" replace />;
 }
 
 function App() {
@@ -43,19 +30,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/"
-          element={isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/login"
-          element={!isAuthenticated ? <LoginPage /> : <Navigate to={takeRedirect()} replace />}
-        />
+        <Route path="/" element={isAuthenticated ? <HomePage /> : <LandingPage />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
         <Route
           path="/p/:shareId"
           element={isAuthenticated ? <SharedPlaylistPage /> : <RequireLoginRedirect />}
         />
       </Routes>
+      <AuthModal />
     </BrowserRouter>
   );
 }

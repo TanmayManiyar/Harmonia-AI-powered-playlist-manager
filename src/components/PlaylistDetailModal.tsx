@@ -9,6 +9,7 @@ import { Modal } from './Modal';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { PlaylistCover } from './PlaylistCover';
 import { Button } from './ui/button';
+import { recordRecentlyPlayed } from '../lib/recentlyPlayed';
 import { cn } from '../lib/utils';
 
 interface PlaylistDetailModalProps {
@@ -109,14 +110,26 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
 
   const playableCount = playlist.songs.filter(isPlayable).length;
 
+  const recordPlayed = () =>
+    recordRecentlyPlayed({
+      id: playlist.id,
+      name: playlist.name,
+      genre: playlist.genre,
+      songs: playlist.songs,
+    });
+
   const handlePlayAll = () => {
     const queued = playQueue(playlist.songs, 0);
     if (queued === 0) flash('error', 'No playable tracks in this playlist yet.');
+    else recordPlayed();
   };
 
   const handlePlaySong = (songId: string) => {
     const idx = playlist.songs.findIndex((s) => s.id === songId);
-    if (idx >= 0) playQueue(playlist.songs, idx);
+    if (idx >= 0) {
+      playQueue(playlist.songs, idx);
+      recordPlayed();
+    }
   };
 
   const handleQueueAll = () => {

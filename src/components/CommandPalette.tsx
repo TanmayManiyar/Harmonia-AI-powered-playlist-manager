@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Command } from 'cmdk';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Plus, Store, Search, Sparkles, Library, Heart, Disc3, SunMoon, Play,
+  Plus, Store, Search, Sparkles, Library, Heart, Disc3, SunMoon, Play, House,
 } from 'lucide-react';
 import { ViewId, ActionId } from './Sidebar';
 import { usePlaylistStore } from '../store';
@@ -94,6 +94,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onSelectView, on
                 </Command.Group>
 
                 <Command.Group heading="Go to" className="mt-1 px-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[0.66rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted">
+                  <Command.Item className={itemClass} onSelect={() => run(() => onSelectView('home'))}>
+                    <House size={16} className="text-muted" /> Home
+                  </Command.Item>
                   <Command.Item className={itemClass} onSelect={() => run(() => onSelectView('library'))}>
                     <Library size={16} className="text-muted" /> Library
                   </Command.Item>

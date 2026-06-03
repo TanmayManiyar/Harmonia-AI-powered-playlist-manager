@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar, ViewId, ActionId } from '../components/Sidebar';
 import {
+  HomeView,
   MyPlaylistsSection,
   FavoritesSection,
   GenreSection,
@@ -20,7 +21,7 @@ import { useAuthStore } from '../store/authStore';
 import { usePlaylistStore } from '../store';
 
 export const HomePage: React.FC = () => {
-  const [activeView, setActiveView] = useState<ViewId>('library');
+  const [activeView, setActiveView] = useState<ViewId>('home');
   const [activeAction, setActiveAction] = useState<ActionId | null>(null);
 
   const [showDeleteStep1, setShowDeleteStep1] = useState(false);
@@ -67,6 +68,7 @@ export const HomePage: React.FC = () => {
 
       <main className="canvas px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
         <div key={activeView} className="mx-auto max-w-[1180px] motion-safe:animate-[fadeIn_.28s_ease-out]">
+          {activeView === 'home' && <HomeView userName={user?.name ?? ''} />}
           {activeView === 'library' && <MyPlaylistsSection />}
           {activeView === 'favorites' && <FavoritesSection />}
           {activeView === 'genres' && <GenreSection />}

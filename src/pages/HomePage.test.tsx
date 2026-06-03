@@ -28,6 +28,7 @@ describe('HomePage', () => {
   it('should render the view navigation', () => {
     render(<HomePage />);
 
+    expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Library')).toBeInTheDocument();
     expect(screen.getByText('Favorites')).toBeInTheDocument();
     expect(screen.getByText('Genres')).toBeInTheDocument();
@@ -49,9 +50,10 @@ describe('HomePage', () => {
     expect(screen.getByText('Delete Account')).toBeInTheDocument();
   });
 
-  it('should default to the library view', () => {
+  it('should default to the home view', () => {
     render(<HomePage />);
-    expect(screen.getByText('My Playlists')).toBeInTheDocument();
+    // Empty library on the home view shows its prompt
+    expect(screen.getByText(/Your library is empty/i)).toBeInTheDocument();
   });
 
   it('should have the core layout structure', () => {

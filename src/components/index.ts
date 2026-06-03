@@ -1,4 +1,6 @@
 // Export all components
+export { HomeView } from './HomeView';
+export { AuthModal } from './AuthModal';
 export { PlaylistCard } from './PlaylistCard';
 export { PlaylistDetailModal } from './PlaylistDetailModal';
 export { SongItem } from './SongItem';

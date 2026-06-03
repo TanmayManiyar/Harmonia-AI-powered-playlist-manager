@@ -4,6 +4,7 @@ import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore } from '../store/playerStore';
 import { PlaylistCover } from './PlaylistCover';
+import { recordRecentlyPlayed } from '../lib/recentlyPlayed';
 import { cn } from '../lib/utils';
 
 interface PlaylistCardProps {
@@ -27,7 +28,15 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen, in
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    playQueue(playlist.songs, 0);
+    const queued = playQueue(playlist.songs, 0);
+    if (queued > 0) {
+      recordRecentlyPlayed({
+        id: playlist.id,
+        name: playlist.name,
+        genre: playlist.genre,
+        songs: playlist.songs,
+      });
+    }
   };
 
   return (
