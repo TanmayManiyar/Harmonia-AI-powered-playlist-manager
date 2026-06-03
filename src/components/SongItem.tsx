@@ -1,35 +1,56 @@
 import React from 'react';
+import { Play } from 'lucide-react';
 import { Song } from '../models';
 
 interface SongItemProps {
   song: Song;
   onRemove?: (songId: string) => void;
+  onPlay?: (song: Song) => void;
   showRemoveButton?: boolean;
+  isActive?: boolean;
 }
 
 /**
- * SongItem — a single row: title, artist · genre, optional remove.
+ * SongItem — a single row: title, artist · genre, optional play / remove.
  */
 export const SongItem: React.FC<SongItemProps> = ({
   song,
   onRemove,
+  onPlay,
   showRemoveButton = true,
+  isActive = false,
 }) => {
+  const playable = Boolean(song.youtubeId);
+
   return (
-    <div className="group flex items-center justify-between gap-3 rounded border border-transparent px-3 py-2.5 transition-colors hover:border-line hover:bg-paper-2">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-ink">{song.title}</span>
-          {song.isCustom && (
-            <span className="rounded-full border border-line bg-surface px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">
-              Custom
+    <div className="group flex items-center justify-between gap-3 rounded border border-transparent px-2 py-2 transition-colors hover:border-line hover:bg-paper-2">
+      <div className="flex min-w-0 items-center gap-2.5">
+        {onPlay && (
+          <button
+            onClick={() => onPlay(song)}
+            disabled={!playable}
+            aria-label={`Play ${song.title}`}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-soft transition-colors hover:bg-accent hover:text-accent-contrast disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-soft"
+          >
+            <Play size={14} className="translate-x-px" />
+          </button>
+        )}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`truncate text-sm font-medium ${isActive ? 'text-accent-ink' : 'text-ink'}`}>
+              {song.title}
             </span>
-          )}
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-          <span className="truncate">{song.artist}</span>
-          <span aria-hidden="true">·</span>
-          <span>{song.genre}</span>
+            {song.isCustom && (
+              <span className="rounded-full border border-line bg-surface px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">
+                Custom
+              </span>
+            )}
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+            <span className="truncate">{song.artist}</span>
+            <span aria-hidden="true">·</span>
+            <span>{song.genre}</span>
+          </div>
         </div>
       </div>
       {showRemoveButton && onRemove && (

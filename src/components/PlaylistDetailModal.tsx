@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2 } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
+import { usePlayerStore, isPlayable } from '../store/playerStore';
 import { api } from '../services/api';
 import { SongItem } from './SongItem';
 import { Modal } from './Modal';
@@ -33,6 +34,9 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   const updatePlaylistName = usePlaylistStore((s) => s.updatePlaylistName);
   const deletePlaylist = usePlaylistStore((s) => s.deletePlaylist);
   const removeSongFromPlaylist = usePlaylistStore((s) => s.removeSongFromPlaylist);
+
+  const playQueue = usePlayerStore((s) => s.playQueue);
+  const playingSongId = usePlayerStore((s) => s.queue[s.index]?.id ?? null);
 
   useEffect(() => {
     if (playlist) setEditedName(playlist.name);
@@ -97,16 +101,16 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
     }
   };
 
+  const playableCount = playlist.songs.filter(isPlayable).length;
+
   const handlePlayAll = () => {
-    const ids = playlist.songs.map((s) => s.youtubeId).filter(Boolean);
-    if (ids.length === 0) {
-      flash('error', 'No playable YouTube videos in this playlist.');
-      return;
-    }
-    window.open(
-      `https://www.youtube.com/watch_videos?video_ids=${ids.slice(0, 50).join(',')}`,
-      '_blank'
-    );
+    const queued = playQueue(playlist.songs, 0);
+    if (queued === 0) flash('error', 'No playable tracks in this playlist yet.');
+  };
+
+  const handlePlaySong = (songId: string) => {
+    const idx = playlist.songs.findIndex((s) => s.id === songId);
+    if (idx >= 0) playQueue(playlist.songs, idx);
   };
 
   const languages = [...new Set(playlist.songs.map((s) => s.language).filter(Boolean))].join(', ');
@@ -150,7 +154,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2 border-b border-line pb-5">
-          <Button variant="accent" onClick={handlePlayAll}>
+          <Button variant="accent" onClick={handlePlayAll} disabled={playableCount === 0}>
             <Play size={16} /> Play all
           </Button>
           <Button
@@ -212,6 +216,8 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
               <SongItem
                 key={song.id}
                 song={song}
+                isActive={song.id === playingSongId}
+                onPlay={() => handlePlaySong(song.id)}
                 onRemove={(songId) => removeSongFromPlaylist(playlist.id, songId)}
               />
             ))

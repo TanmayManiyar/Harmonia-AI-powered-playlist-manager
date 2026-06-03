@@ -11,6 +11,9 @@ import {
   Modal,
   ThemeToggle,
 } from '../components';
+import { PlayerHost } from '../components/player/PlayerHost';
+import { PlayerBar } from '../components/player/PlayerBar';
+import { NowPlayingPanel } from '../components/player/NowPlayingPanel';
 import { useAuthStore } from '../store/authStore';
 import { usePlaylistStore } from '../store';
 
@@ -104,6 +107,9 @@ export const HomePage: React.FC = () => {
         cancelText="No, keep my account"
       />
 
+      <PlayerHost />
+      <PlayerBar />
+      <NowPlayingPanel />
       <ThemeToggle />
     </div>
   );
