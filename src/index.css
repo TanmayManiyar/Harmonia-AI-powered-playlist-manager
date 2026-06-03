@@ -4,46 +4,61 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 /* ============================================================
-   Editorial theme tokens — light "paper" (default) + dark
+   ACID POP — funky Gen-Z theme. Light (default) + dark.
+   accent = grape (violet); acid/bubble/ice are playful pops.
    ============================================================ */
 :root {
-  --paper: #faf9f6; /* page background */
-  --paper-2: #f3f1ea; /* sunken areas */
-  --surface: #ffffff; /* cards, panels */
-  --surface-2: #fbfaf7;
-  --ink: #14130f; /* primary text */
-  --ink-soft: #45423b; /* secondary text */
-  --muted: #78736a; /* tertiary text */
-  --line: #e4e0d6; /* hairline borders */
-  --line-strong: #d3cdbf;
-  --accent: #c4623b; /* terracotta */
-  --accent-ink: #9c4a2a; /* darker terracotta for text-on-paper */
-  --accent-contrast: #ffffff; /* text on accent fills */
-  --danger: #b4322b;
-  --shadow: 0 1px 2px rgba(20, 19, 15, 0.04), 0 8px 24px rgba(20, 19, 15, 0.06);
-  --shadow-lg: 0 4px 12px rgba(20, 19, 15, 0.08), 0 24px 56px rgba(20, 19, 15, 0.12);
+  --paper: #fbf7ef;
+  --paper-2: #f1e9d7;
+  --surface: #ffffff;
+  --surface-2: #fbf7ef;
+  --ink: #15121c;
+  --ink-soft: #423d57;
+  --muted: #756f86;
+  --line: #e7dfcd;
+  --line-strong: #d6cbb1;
+
+  --grape: #7c3aed;
+  --acid: #b8e600;
+  --bubble: #ff2e88;
+  --ice: #06b6d4;
+
+  --accent: var(--grape);
+  --accent-ink: #6d28d9;
+  --accent-contrast: #ffffff;
+  --danger: #ff2e6e;
+
+  --shadow: 0 1px 2px rgba(21, 18, 28, 0.05), 0 10px 26px rgba(21, 18, 28, 0.08);
+  --shadow-lg: 0 6px 16px rgba(21, 18, 28, 0.1), 0 28px 60px rgba(124, 58, 237, 0.14);
+  --shadow-pop: 4px 4px 0 0 var(--ink);
 }
 
 [data-theme='dark'] {
-  --paper: #0e0e0c;
-  --paper-2: #161513;
-  --surface: #1a1916;
-  --surface-2: #201e1a;
-  --ink: #f2efe7;
-  --ink-soft: #cbc6bb;
-  --muted: #938d81;
-  --line: #2c2a25;
-  --line-strong: #3a382f;
-  --accent: #d4744a;
-  --accent-ink: #e08a60;
-  --accent-contrast: #14130f;
-  --danger: #e2685f;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.6);
+  --paper: #0d0b14;
+  --paper-2: #15111f;
+  --surface: #181327;
+  --surface-2: #1f1838;
+  --ink: #f5f2ff;
+  --ink-soft: #ccc5e6;
+  --muted: #8e87a8;
+  --line: #2a2440;
+  --line-strong: #3b3458;
+
+  --grape: #9d6bff;
+  --acid: #c6ff3a;
+  --bubble: #ff4d9d;
+  --ice: #22d3ee;
+
+  --accent: var(--grape);
+  --accent-ink: #b794ff;
+  --accent-contrast: #0d0b14;
+  --danger: #ff5e86;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 26px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 6px 16px rgba(0, 0, 0, 0.55), 0 28px 60px rgba(124, 58, 237, 0.35);
+  --shadow-pop: 4px 4px 0 0 rgba(255, 255, 255, 0.9);
 }
 
-/* Map tokens into Tailwind's theme (inline = resolves var() live, so
-   utilities like bg-surface / text-ink react to data-theme switches) */
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
@@ -54,22 +69,25 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-contrast: var(--accent-contrast);
   --color-danger: var(--danger);
 
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --color-grape: var(--grape);
+  --color-acid: var(--acid);
+  --color-bubble: var(--bubble);
+  --color-ice: var(--ice);
+
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  --radius-sm: 3px;
-  --radius-DEFAULT: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-
-  --shadow-card: var(--shadow);
-  --shadow-pop: var(--shadow-lg);
+  --radius-sm: 8px;
+  --radius-DEFAULT: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
 }
 
 @layer base {
@@ -87,34 +105,41 @@
     background: var(--paper);
     color: var(--ink);
     font-family: var(--font-sans);
-    font-feature-settings: 'cv05', 'ss01';
     line-height: 1.55;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    font-weight: 700;
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--accent) 28%, transparent);
+    background: color-mix(in srgb, var(--bubble) 35%, transparent);
   }
 
-  /* Thin, restrained scrollbars */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb {
     background: var(--line-strong);
     border: 3px solid transparent;
     border-radius: 999px;
     background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--muted);
-    background-clip: padding-box;
-  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--grape); background-clip: padding-box; }
+}
+
+/* Funky gradient text for big headlines */
+.text-gradient {
+  background-image: linear-gradient(100deg, var(--grape), var(--bubble) 55%, var(--ice));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Chunky "sticker" card */
+.sticker {
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-pop);
 }
 
 @keyframes fadeIn {
@@ -122,50 +147,38 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Range inputs (player scrubber + volume) — accent fill via --pct */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
 .player-range {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
 }
 .player-range::-webkit-slider-runnable-track {
-  height: 4px;
+  height: 5px;
   border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--accent) 0%,
-    var(--accent) var(--pct, 0%),
-    var(--line-strong) var(--pct, 0%),
-    var(--line-strong) 100%
-  );
+  background: linear-gradient(to right, var(--grape) 0%, var(--bubble) var(--pct, 0%), var(--line-strong) var(--pct, 0%), var(--line-strong) 100%);
 }
-.player-range::-moz-range-track {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--line-strong);
-}
-.player-range::-moz-range-progress {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--accent);
-}
+.player-range::-moz-range-track { height: 5px; border-radius: 999px; background: var(--line-strong); }
+.player-range::-moz-range-progress { height: 5px; border-radius: 999px; background: var(--bubble); }
 .player-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   margin-top: -4px;
-  height: 12px;
-  width: 12px;
+  height: 13px; width: 13px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--bubble);
   border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 .player-range::-moz-range-thumb {
-  height: 12px;
-  width: 12px;
+  height: 13px; width: 13px;
   border: 2px solid var(--surface);
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--bubble);
 }
 
 @media (prefers-reduced-motion: reduce) {

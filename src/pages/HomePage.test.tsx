@@ -53,7 +53,7 @@ describe('HomePage', () => {
   it('should default to the home view', () => {
     render(<HomePage />);
     // Empty library on the home view shows its prompt
-    expect(screen.getByText(/Your library is empty/i)).toBeInTheDocument();
+    expect(screen.getByText(/ghost town/i)).toBeInTheDocument();
   });
 
   it('should have the core layout structure', () => {

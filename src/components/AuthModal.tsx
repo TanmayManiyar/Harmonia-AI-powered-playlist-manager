@@ -102,11 +102,11 @@ export const AuthModal: React.FC = () => {
               <span className="mb-3 inline-grid h-11 w-11 place-items-center rounded-md bg-accent font-display text-lg font-bold text-accent-contrast">
                 H
               </span>
-              <h2 className="font-display text-2xl font-semibold tracking-tight text-ink">
-                {mode === 'register' ? 'Create your account' : 'Welcome back'}
+              <h2 className="font-display text-2xl font-bold tracking-tight text-ink">
+                {mode === 'register' ? "let's get you in 🚀" : 'yo, welcome back 👋'}
               </h2>
               <p className="mt-1 text-sm text-muted">
-                {mode === 'register' ? 'Start composing your library' : 'Sign in to continue'}
+                {mode === 'register' ? 'your next favorite playlist is loading…' : "we missed you fr"}
               </p>
             </div>
 
@@ -151,8 +151,8 @@ export const AuthModal: React.FC = () => {
               {error && <div className="rounded-md border border-danger/40 px-3 py-2 text-sm text-danger">{error}</div>}
               <Button type="submit" variant="accent" size="lg" disabled={loading} className="mt-1 w-full">
                 {loading
-                  ? mode === 'register' ? 'Creating…' : 'Signing in…'
-                  : mode === 'register' ? 'Create account' : 'Sign in'}
+                  ? mode === 'register' ? 'cooking…' : 'letting you in…'
+                  : mode === 'register' ? "let's go 🎉" : 'sign in'}
               </Button>
             </form>
 

@@ -1,15 +1,16 @@
 import React from 'react';
 import { cn, stableIndex } from '../lib/utils';
 
-/** Muted editorial duotones — {field background, type ink}. No neon. */
+/** Vivid Acid-Pop duotones — {field background, bold type}. */
 const PALETTES: { bg: string; fg: string }[] = [
-  { bg: '#E8DFD3', fg: '#9C4A2A' }, // terracotta on cream
-  { bg: '#DCE3DA', fg: '#2F4A3A' }, // forest on sage
-  { bg: '#ECE9E1', fg: '#1B1A16' }, // ink on bone
-  { bg: '#EBE3D1', fg: '#8A6A1F' }, // ochre on linen
-  { bg: '#DEE2E5', fg: '#33414B' }, // slate on mist
-  { bg: '#E9DEE2', fg: '#6A2E45' }, // plum on blush
-  { bg: '#E3E0D6', fg: '#3A4030' }, // olive on stone
+  { bg: '#C6FF3A', fg: '#15121C' }, // acid lime
+  { bg: '#7C3AED', fg: '#F7F0FF' }, // grape
+  { bg: '#FF2E88', fg: '#1A0E14' }, // bubblegum
+  { bg: '#22D3EE', fg: '#0C1418' }, // ice
+  { bg: '#15121C', fg: '#C6FF3A' }, // ink + acid
+  { bg: '#191225', fg: '#FF6AD5' }, // ink + pink
+  { bg: '#FF7A3D', fg: '#1A0E08' }, // tangerine
+  { bg: '#A78BFA', fg: '#1A1030' }, // soft grape
 ];
 
 interface PlaylistCoverProps {

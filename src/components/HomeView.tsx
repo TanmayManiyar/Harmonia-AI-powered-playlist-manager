@@ -33,15 +33,15 @@ function saveForYouCache(playlists: SuggestedPlaylist[]) {
 
 const greeting = () => {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'rise & grind';
+  if (h < 18) return 'afternoon vibes';
+  return 'evening, fam';
 };
 
 /** Horizontal, side-scrolling section. */
 const Row: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-10">
-    <h2 className="mb-4 font-display text-xl font-semibold tracking-tight text-ink">{title}</h2>
+    <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">{title}</h2>
     <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">{children}</div>
   </section>
 );
@@ -144,12 +144,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
   return (
     <div>
-      <h1 className="mb-8 font-display text-3xl font-semibold tracking-tight text-ink">
-        {greeting()}{userName ? `, ${userName.split(' ')[0]}` : ''}
+      <h1 className="mb-8 font-display text-4xl font-bold tracking-tight text-ink">
+        {greeting()}{userName ? `, ${userName.split(' ')[0]}` : ''} <span className="text-gradient">🎧</span>
       </h1>
 
       {recent.length > 0 && (
-        <Row title="Jump back in">
+        <Row title="On Repeat 🔁">
           {recent.map((p) => (
             <button
               key={p.id}
@@ -167,7 +167,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       )}
 
       {popular.length > 0 && (
-        <Row title="Popular right now">
+        <Row title="Trending rn 🔥">
           {popular.map((p) => (
             <button
               key={p._id || p.id}
@@ -189,7 +189,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       {(forYou.length > 0 || forYouLoading) && (
         <section className="mb-10">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold tracking-tight text-ink">Made for you</h2>
+            <h2 className="font-display text-xl font-bold tracking-tight text-ink">Made 4 U fr</h2>
             <button
               onClick={() => fetchForYou(true)}
               disabled={forYouLoading}
@@ -200,7 +200,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
           </div>
           {forYouLoading && forYou.length === 0 ? (
             <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted">
-              <Loader2 size={16} className="animate-spin" /> Composing recommendations for you…
+              <Loader2 size={16} className="animate-spin" /> cooking up your recs… 👨‍🍳
             </div>
           ) : (
             <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
@@ -234,8 +234,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       )}
 
       {allPlaylists.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-line bg-surface/50 px-7 py-14 text-center text-sm text-muted">
-          Your library is empty. Use Create, Venues, or AI Chat to build your first playlist.
+        <p className="rounded-2xl border-2 border-dashed border-line bg-surface/50 px-7 py-14 text-center text-sm text-muted">
+          your library's a ghost town rn 👻 — hit Create, Venues, or AI Chat to cook up your first playlist.
         </p>
       ) : (
         genreEntries.map(([genre, playlists]) => (
