@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Play, Pause, SkipBack, SkipForward, Music } from 'lucide-react';
+import { X, Play, Pause, SkipBack, SkipForward, GripVertical } from 'lucide-react';
 import { usePlayerStore } from '../../store/playerStore';
+import { SongThumb } from '../SongThumb';
 import { cn } from '../../lib/utils';
 
 /**
- * NowPlayingPanel — right-hand drawer with large art, transport, and the
- * up-next queue. Opened by tapping the bottom bar's track.
+ * NowPlayingPanel — right drawer. Big cover + transport live inside the same
+ * scroll area as the queue (so the cover scrolls up as you browse up-next).
+ * The queue is drag-reorderable.
  */
 export const NowPlayingPanel: React.FC = () => {
   const expanded = usePlayerStore((s) => s.expanded);
@@ -20,8 +22,19 @@ export const NowPlayingPanel: React.FC = () => {
   const prev = usePlayerStore((s) => s.prev);
   const playAt = usePlayerStore((s) => s.playAt);
   const clearUpNext = usePlayerStore((s) => s.clearUpNext);
+  const reorderQueue = usePlayerStore((s) => s.reorderQueue);
 
   const current = queue[index] ?? null;
+  const dragIndex = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+
+  const handleDrop = (target: number) => {
+    const from = dragIndex.current;
+    dragIndex.current = null;
+    setDragOver(null);
+    if (from == null || from === target) return;
+    reorderQueue(from, target);
+  };
 
   return (
     <AnimatePresence>
@@ -35,84 +48,90 @@ export const NowPlayingPanel: React.FC = () => {
             onClick={() => setExpanded(false)}
           />
           <motion.aside
-            className="fixed inset-y-0 right-0 z-[78] flex w-full max-w-[380px] flex-col border-l border-line bg-surface"
+            className="fixed inset-y-0 right-0 z-[78] flex w-full max-w-[380px] flex-col border-l-2 border-line bg-surface"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <span className="text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted">
-                Now Playing
-              </span>
+              <span className="text-[0.66rem] font-bold uppercase tracking-[0.14em] text-muted">Now Playing</span>
               <button
                 onClick={() => setExpanded(false)}
                 aria-label="Close now playing"
-                className="grid h-8 w-8 place-items-center rounded text-muted hover:bg-paper-2 hover:text-ink"
+                className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-paper-2 hover:text-ink"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="flex flex-col items-center px-6 pt-8 text-center">
-              <div className="grid aspect-square w-48 place-items-center rounded-lg bg-accent/12 text-accent-ink">
-                <Music size={56} strokeWidth={1.5} />
-              </div>
-              <h3 className="mt-5 font-display text-xl font-semibold text-ink">{current.title}</h3>
-              <p className="mt-1 text-sm text-muted">{current.artist}</p>
+            {/* single scroll area — cover scrolls up with the queue */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col items-center px-6 pt-8 text-center">
+                <SongThumb
+                  youtubeId={current.youtubeId}
+                  title={current.title}
+                  iconSize={56}
+                  className="aspect-square w-48 rounded-2xl border-2 border-ink shadow-[var(--shadow-pop)]"
+                />
+                <h3 className="mt-5 font-display text-xl font-bold text-ink">{current.title}</h3>
+                <p className="mt-1 text-sm text-muted">{current.artist}</p>
 
-              <div className="mt-6 flex items-center gap-2">
-                <button onClick={prev} aria-label="Previous" className="grid h-10 w-10 place-items-center rounded-full text-ink-soft hover:bg-paper-2">
-                  <SkipBack size={20} />
-                </button>
-                <button
-                  onClick={toggle}
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
-                  className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-contrast hover:brightness-95"
-                >
-                  {isPlaying ? <Pause size={20} /> : <Play size={20} className="translate-x-px" />}
-                </button>
-                <button onClick={next} aria-label="Next" className="grid h-10 w-10 place-items-center rounded-full text-ink-soft hover:bg-paper-2">
-                  <SkipForward size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-7 flex min-h-0 flex-1 flex-col px-3 pb-4">
-              <div className="flex items-center justify-between px-2 pb-2">
-                <span className="text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted">
-                  Up Next
-                </span>
-                {index < queue.length - 1 && (
-                  <button
-                    onClick={clearUpNext}
-                    className="text-[0.7rem] font-medium text-muted transition-colors hover:text-danger"
-                  >
-                    Clear
+                <div className="mt-6 flex items-center gap-2">
+                  <button onClick={prev} aria-label="Previous" className="grid h-10 w-10 place-items-center rounded-full text-ink-soft hover:bg-paper-2">
+                    <SkipBack size={20} />
                   </button>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {queue.map((song, i) => (
                   <button
-                    key={`${song.id}-${i}`}
-                    onClick={() => playAt(i)}
-                    className={cn(
-                      'flex w-full items-center gap-3 rounded px-2 py-2 text-left transition-colors',
-                      i === index ? 'bg-paper-2' : 'hover:bg-paper-2'
-                    )}
+                    onClick={toggle}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                    className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-contrast hover:brightness-110"
                   >
-                    <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted">
-                      {i === index && isPlaying ? <Play size={12} className="mx-auto text-accent-ink" /> : i + 1}
-                    </span>
-                    <span className="min-w-0">
-                      <span className={cn('block truncate text-sm', i === index ? 'font-medium text-ink' : 'text-ink-soft')}>
-                        {song.title}
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} className="translate-x-px" />}
+                  </button>
+                  <button onClick={next} aria-label="Next" className="grid h-10 w-10 place-items-center rounded-full text-ink-soft hover:bg-paper-2">
+                    <SkipForward size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-8 px-3 pb-4">
+                <div className="flex items-center justify-between px-2 pb-2">
+                  <span className="text-[0.66rem] font-bold uppercase tracking-[0.14em] text-muted">Up Next · drag to reorder</span>
+                  {index < queue.length - 1 && (
+                    <button onClick={clearUpNext} className="text-[0.7rem] font-semibold text-muted transition-colors hover:text-danger">
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div>
+                  {queue.map((song, i) => (
+                    <div
+                      key={`${song.id}-${i}`}
+                      draggable
+                      onDragStart={() => { dragIndex.current = i; }}
+                      onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
+                      onDragOver={(e) => { e.preventDefault(); if (dragOver !== i) setDragOver(i); }}
+                      onDrop={() => handleDrop(i)}
+                      className={cn(
+                        'flex items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors',
+                        dragOver === i ? 'bg-paper-2 ring-1 ring-accent/40' : i === index ? 'bg-paper-2' : 'hover:bg-paper-2'
+                      )}
+                    >
+                      <span className="cursor-grab text-muted active:cursor-grabbing" aria-hidden="true">
+                        <GripVertical size={14} />
                       </span>
-                      <span className="block truncate text-xs text-muted">{song.artist}</span>
-                    </span>
-                  </button>
-                ))}
+                      <button onClick={() => playAt(i)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+                        <SongThumb youtubeId={song.youtubeId} title={song.title} iconSize={14} className="h-10 w-10 shrink-0 rounded-md" />
+                        <span className="min-w-0">
+                          <span className={cn('block truncate text-sm', i === index ? 'font-bold text-accent-ink' : 'font-medium text-ink')}>
+                            {song.title}
+                          </span>
+                          <span className="block truncate text-xs text-muted">{song.artist}</span>
+                        </span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.aside>

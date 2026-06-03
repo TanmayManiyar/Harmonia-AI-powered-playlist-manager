@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import { Song } from '../models';
+import { SongThumb } from './SongThumb';
 
 interface SongItemProps {
   song: Song;
@@ -25,15 +26,22 @@ export const SongItem: React.FC<SongItemProps> = ({
   return (
     <div className="group flex items-center justify-between gap-3 rounded border border-transparent px-2 py-2 transition-colors hover:border-line hover:bg-paper-2">
       <div className="flex min-w-0 items-center gap-2.5">
-        {onPlay && (
+        {onPlay ? (
           <button
             onClick={() => onPlay(song)}
             disabled={!playable}
             aria-label={`Play ${song.title}`}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-soft transition-colors hover:bg-accent hover:text-accent-contrast disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-soft"
+            className="group/thumb relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md disabled:cursor-default"
           >
-            <Play size={14} className="translate-x-px" />
+            <SongThumb youtubeId={song.youtubeId} title={song.title} iconSize={14} className="h-10 w-10 rounded-md" />
+            {playable && (
+              <span className="absolute inset-0 grid place-items-center bg-black/45 text-white opacity-0 transition-opacity group-hover/thumb:opacity-100">
+                <Play size={15} className="translate-x-px" />
+              </span>
+            )}
           </button>
+        ) : (
+          <SongThumb youtubeId={song.youtubeId} title={song.title} iconSize={14} className="h-10 w-10 shrink-0 rounded-md" />
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-2">

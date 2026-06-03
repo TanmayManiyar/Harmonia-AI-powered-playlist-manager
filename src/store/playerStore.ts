@@ -20,6 +20,7 @@ interface PlayerState {
   playQueue: (songs: Song[], startIndex?: number) => number; // returns # queued
   addToQueue: (songs: Song[]) => number; // returns # added
   clearUpNext: () => void;
+  reorderQueue: (from: number, to: number) => void;
   playAt: (index: number) => void;
   toggle: () => void;
   play: () => void;
@@ -79,6 +80,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   clearUpNext: () => {
     const { queue, index } = get();
     set({ queue: queue.slice(0, index + 1) });
+  },
+
+  reorderQueue: (from, to) => {
+    const { queue, index } = get();
+    if (from === to || from < 0 || to < 0 || from >= queue.length || to >= queue.length) return;
+    const currentId = queue[index]?.id;
+    const q = [...queue];
+    const [moved] = q.splice(from, 1);
+    if (!moved) return;
+    q.splice(to, 0, moved);
+    // Keep `index` pointing at the song that's actually playing
+    const newIndex = currentId ? q.findIndex((s) => s.id === currentId) : index;
+    set({ queue: q, index: newIndex < 0 ? index : newIndex });
   },
 
   playAt: (index) => {

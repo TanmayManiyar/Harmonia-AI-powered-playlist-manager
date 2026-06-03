@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { Play } from 'lucide-react';
 import { Song } from '../models';
 import { api } from '../services/api';
 import { usePlaylistStore } from '../store';
+import { usePlayerStore } from '../store/playerStore';
 import { Button } from './ui/button';
 import { BrowseGrid } from './BrowseGrid';
+import { SongThumb } from './SongThumb';
 import { cn } from '../lib/utils';
 
 /**
@@ -21,6 +24,15 @@ export const SearchPanel: React.FC = () => {
 
   const playlists = usePlaylistStore((s) => s.getAllPlaylists());
   const addSongToPlaylist = usePlaylistStore((s) => s.addSongToPlaylist);
+  const playQueue = usePlayerStore((s) => s.playQueue);
+  const playingSongId = usePlayerStore((s) => s.queue[s.index]?.id ?? null);
+
+  const playFromResults = (i: number) => {
+    if (playQueue(results, i) === 0) {
+      setError("can't play this one — no audio found 😬");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
 
   const commonGenres = ['Rock', 'Pop', 'Jazz', 'Classical', 'Hip Hop', 'Electronic', 'Country'];
 
@@ -125,23 +137,32 @@ export const SearchPanel: React.FC = () => {
             Results ({results.length})
           </h3>
           <div className="flex flex-col gap-1.5">
-            {results.map((song) => (
+            {results.map((song, i) => (
               <div
                 key={song.id}
-                className="flex items-center justify-between gap-3 rounded border border-line bg-surface px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-2.5 py-2"
               >
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-ink">{song.title}</div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-                    <span className="truncate">{song.artist}</span>
-                    {song.genre && (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span>{song.genre}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                <button
+                  onClick={() => playFromResults(i)}
+                  className="group/res flex min-w-0 flex-1 items-center gap-3 text-left"
+                  aria-label={`Play ${song.title}`}
+                >
+                  <span className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-md">
+                    <SongThumb youtubeId={song.youtubeId} title={song.title} iconSize={15} className="h-11 w-11 rounded-md" />
+                    <span className="absolute inset-0 grid place-items-center bg-black/45 text-white opacity-0 transition-opacity group-hover/res:opacity-100">
+                      <Play size={16} className="translate-x-px" />
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className={cn('block truncate text-sm', song.id === playingSongId ? 'font-bold text-accent-ink' : 'font-medium text-ink')}>
+                      {song.title}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                      <span className="truncate">{song.artist}</span>
+                      {song.genre && (<><span aria-hidden="true">·</span><span>{song.genre}</span></>)}
+                    </span>
+                  </span>
+                </button>
                 <Button size="sm" variant="outline" onClick={() => { setSelectedSong(song); setSelectedPlaylistId(''); setMessage(null); }}>
                   Add
                 </Button>

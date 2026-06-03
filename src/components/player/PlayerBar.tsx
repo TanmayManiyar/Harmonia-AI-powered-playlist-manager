@@ -1,6 +1,7 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, ChevronUp, Music } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, ChevronUp } from 'lucide-react';
 import { usePlayerStore } from '../../store/playerStore';
+import { SongThumb } from '../SongThumb';
 import { formatTime, cn } from '../../lib/utils';
 
 interface PlayerBarProps {
@@ -51,9 +52,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ inset = false }) => {
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
           aria-label="Open now playing"
         >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded bg-accent/12 text-accent-ink">
-            <Music size={18} />
-          </span>
+          <SongThumb youtubeId={current.youtubeId} title={current.title} iconSize={16} className="h-11 w-11 shrink-0 rounded-md" />
+
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium text-ink">{current.title}</span>
             <span className="block truncate text-xs text-muted">{current.artist}</span>
