@@ -12,5 +12,6 @@ export { MyPlaylistsSection } from './MyPlaylistsSection';
 export { FavoritesSection } from './FavoritesSection';
 export { GenreSection } from './GenreSection';
 export { AIChatPanel } from './AIChatPanel';
+export { VenuesPanel } from './VenuesPanel';
 export { Sidebar } from './Sidebar';
 export { ThemeToggle } from './ThemeToggle';

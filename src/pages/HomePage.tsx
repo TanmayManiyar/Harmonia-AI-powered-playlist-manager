@@ -7,6 +7,7 @@ import {
   PlaylistCreationPanel,
   SearchPanel,
   AIChatPanel,
+  VenuesPanel,
   ConfirmationDialog,
   Modal,
   ThemeToggle,
@@ -73,6 +74,9 @@ export const HomePage: React.FC = () => {
 
       <Modal isOpen={activeAction === 'create'} onClose={() => setActiveAction(null)} title="Create Playlist">
         <PlaylistCreationPanel />
+      </Modal>
+      <Modal isOpen={activeAction === 'venues'} onClose={() => setActiveAction(null)} title="Venue Playlists" size="lg">
+        <VenuesPanel />
       </Modal>
       <Modal isOpen={activeAction === 'search'} onClose={() => setActiveAction(null)} title="Search Songs">
         <SearchPanel />

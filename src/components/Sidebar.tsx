@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   Sparkles,
+  Store,
   LogOut,
   Trash2,
   Menu,
@@ -34,6 +35,7 @@ const VIEWS: { id: ViewId; label: string; icon: React.ReactNode }[] = [
 
 const ACTIONS: { id: ActionId; label: string; icon: React.ReactNode }[] = [
   { id: 'create', label: 'Create', icon: <Plus size={18} /> },
+  { id: 'venues', label: 'Venues', icon: <Store size={18} /> },
   { id: 'search', label: 'Search', icon: <Search size={18} /> },
   { id: 'ai', label: 'AI Chat', icon: <Sparkles size={18} /> },
 ];

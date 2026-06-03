@@ -177,6 +177,14 @@ class ApiClient {
       body: JSON.stringify({ prompt, playlistName, genre }),
     });
   }
+
+  // One-tap venue playlist
+  async createVenuePlaylist(venue: string, count?: number) {
+    return this.request<ApiPlaylist>('/gemini/venue', {
+      method: 'POST',
+      body: JSON.stringify({ venue, count }),
+    });
+  }
 }
 
 export const api = new ApiClient();
