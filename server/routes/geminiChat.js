@@ -62,6 +62,26 @@ async function resolveSongs(aiSongs, genre) {
   return finalSongs;
 }
 
+/** The user's strongest genres, blended with any recent-play genres. */
+async function topGenres(userId, extra = [], limit = 2) {
+  const playlists = await Playlist.find({ userId });
+  const counts = {};
+  playlists.forEach((p) => {
+    counts[p.genre] = (counts[p.genre] || 0) + 1 + p.songs.length * 0.1;
+  });
+  extra.forEach((g) => {
+    if (g) counts[g] = (counts[g] || 0) + 0.75;
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([g]) => g);
+  const result = sorted.slice(0, limit);
+  const fallbacks = ['Pop', 'Rock', 'Lo-Fi', 'Jazz', 'Hip Hop'];
+  for (const f of fallbacks) {
+    if (result.length >= limit) break;
+    if (!result.includes(f)) result.push(f);
+  }
+  return result.slice(0, limit);
+}
+
 /** Next auto-numbered name for a genre, e.g. "Jazz Playlist 3". */
 async function nextName(userId, genre, suffix) {
   const genreCount = await Playlist.countDocuments({
@@ -145,6 +165,41 @@ router.post('/venue', async (req, res) => {
   } catch (error) {
     console.error('Venue playlist error:', error);
     res.status(500).json({ error: error.message || 'Failed to create venue playlist' });
+  }
+});
+
+/**
+ * POST /api/gemini/foryou
+ * Body: { recentGenres?: string[] }
+ * Personalized playlist suggestions (NOT persisted) based on the user's
+ * taste, excluding songs they already own.
+ */
+router.post('/foryou', async (req, res) => {
+  const recentGenres = Array.isArray(req.body?.recentGenres)
+    ? req.body.recentGenres.filter((g) => typeof g === 'string').slice(0, 6)
+    : [];
+
+  try {
+    const excludeList = await buildExcludeList(req.userId);
+    const genres = await topGenres(req.userId, recentGenres, 2);
+    const taste = genres.join(', ');
+
+    const playlists = [];
+    for (let i = 0; i < genres.length; i++) {
+      const g = genres[i];
+      const prompt = `Recommend a fresh ${g} playlist for a listener who enjoys ${taste}. Choose high-quality songs they likely don't already have. Keep it cohesive.`;
+      const ai = await curatPlaylistFromChat(prompt, excludeList, 8);
+      const genre = normalizeString(ai.genre) || g;
+      const songs = await resolveSongs(ai.songs, genre);
+      playlists.push({ id: `foryou-${i}-${Date.now()}`, name: `${genre} picks for you`, genre, songs });
+      // Prevent the next suggestion from repeating these
+      songs.forEach((s) => excludeList.push(`${s.title} by ${s.artist}`));
+    }
+
+    res.json({ playlists });
+  } catch (error) {
+    console.error('For You error:', error);
+    res.status(500).json({ error: error.message || 'Failed to build recommendations' });
   }
 });
 

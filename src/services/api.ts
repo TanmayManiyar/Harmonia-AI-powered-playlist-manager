@@ -187,6 +187,14 @@ class ApiClient {
     });
   }
 
+  // Personalized "Made for You" suggestions (not persisted)
+  async getForYou(recentGenres: string[] = []) {
+    return this.request<{ playlists: SuggestedPlaylist[] }>('/gemini/foryou', {
+      method: 'POST',
+      body: JSON.stringify({ recentGenres }),
+    });
+  }
+
   // Sharing
   async createShareLink(playlistId: string) {
     return this.request<{ shareId: string }>(`/playlists/${playlistId}/share`, { method: 'POST' });
@@ -218,6 +226,13 @@ class ApiClient {
 
 export interface DiscoverPlaylist extends ApiPlaylist {
   ownerName: string;
+}
+
+export interface SuggestedPlaylist {
+  id: string;
+  name: string;
+  genre: string;
+  songs: Song[];
 }
 
 export const api = new ApiClient();

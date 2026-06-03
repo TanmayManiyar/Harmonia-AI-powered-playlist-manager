@@ -1,12 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { Play } from 'lucide-react';
+import { Play, Plus, Check, Loader2, RotateCw } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore } from '../store/playerStore';
-import { api, DiscoverPlaylist } from '../services/api';
+import { api, DiscoverPlaylist, SuggestedPlaylist } from '../services/api';
 import { PlaylistCard } from './PlaylistCard';
 import { PlaylistDetailModal } from './PlaylistDetailModal';
 import { PlaylistCover } from './PlaylistCover';
 import { getRecentlyPlayed, recordRecentlyPlayed, RecentPlaylist } from '../lib/recentlyPlayed';
+
+const FORYOU_KEY = 'playlist-manager:foryou';
+const today = () => new Date().toISOString().slice(0, 10);
+
+function loadForYouCache(): SuggestedPlaylist[] | null {
+  try {
+    const raw = localStorage.getItem(FORYOU_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (c?.date === today() && Array.isArray(c.playlists)) return c.playlists;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function saveForYouCache(playlists: SuggestedPlaylist[]) {
+  try {
+    localStorage.setItem(FORYOU_KEY, JSON.stringify({ date: today(), playlists }));
+  } catch {
+    /* ignore */
+  }
+}
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -30,10 +53,14 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const byGenre = usePlaylistStore((s) => s.getPlaylistsByGenre());
   const allPlaylists = usePlaylistStore((s) => s.getAllPlaylists());
+  const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
   const [recent, setRecent] = useState<RecentPlaylist[]>([]);
   const [popular, setPopular] = useState<DiscoverPlaylist[]>([]);
+  const [forYou, setForYou] = useState<SuggestedPlaylist[]>([]);
+  const [forYouLoading, setForYouLoading] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
@@ -50,6 +77,46 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       .then((d) => setPopular(d.popular))
       .catch(() => setPopular([]));
   }, []);
+
+  const fetchForYou = (force = false) => {
+    if (!force) {
+      const cached = loadForYouCache();
+      if (cached && cached.length > 0) {
+        setForYou(cached);
+        return;
+      }
+    }
+    setForYouLoading(true);
+    const genres = [...new Set(getRecentlyPlayed().map((r) => r.genre).filter(Boolean))];
+    api
+      .getForYou(genres)
+      .then((d) => {
+        setForYou(d.playlists);
+        saveForYouCache(d.playlists);
+      })
+      .catch(() => setForYou([]))
+      .finally(() => setForYouLoading(false));
+  };
+
+  useEffect(() => {
+    fetchForYou();
+  }, []);
+
+  const playSuggested = (p: SuggestedPlaylist) => {
+    if (playQueue(p.songs, 0) > 0) {
+      recordRecentlyPlayed({ id: p.id, name: p.name, genre: p.genre, songs: p.songs });
+    }
+  };
+
+  const saveSuggested = async (p: SuggestedPlaylist) => {
+    try {
+      await api.createPlaylist(p.genre, p.name, p.songs);
+      await fetchPlaylists();
+      setSavedIds((prev) => new Set(prev).add(p.id));
+    } catch {
+      /* ignore */
+    }
+  };
 
   const toRecent = (p: { _id?: string; id?: string; name: string; genre: string; songs: RecentPlaylist['songs'] }): RecentPlaylist => ({
     id: p._id || p.id || '',
@@ -117,6 +184,53 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
             </button>
           ))}
         </Row>
+      )}
+
+      {(forYou.length > 0 || forYouLoading) && (
+        <section className="mb-10">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold tracking-tight text-ink">Made for you</h2>
+            <button
+              onClick={() => fetchForYou(true)}
+              disabled={forYouLoading}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted transition-colors hover:text-ink disabled:opacity-50"
+            >
+              <RotateCw size={13} className={forYouLoading ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
+          {forYouLoading && forYou.length === 0 ? (
+            <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted">
+              <Loader2 size={16} className="animate-spin" /> Composing recommendations for you…
+            </div>
+          ) : (
+            <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+              {forYou.map((p) => (
+                <div
+                  key={p.id}
+                  className="group relative w-44 shrink-0 overflow-hidden rounded-md border border-line bg-surface shadow-[var(--shadow)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+                >
+                  <button onClick={() => playSuggested(p)} aria-label={`Play ${p.name}`} className="block w-full text-left">
+                    <PlaylistCover name={p.name} genre={p.genre} className="aspect-[4/3] w-full" />
+                    <span className="absolute right-2.5 top-[5.6rem] grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100">
+                      <Play size={16} className="translate-x-px" />
+                    </span>
+                  </button>
+                  <div className="flex items-center justify-between gap-2 px-3.5 py-3">
+                    <span className="truncate text-xs text-muted">{p.genre} · {p.songs.length} songs</span>
+                    <button
+                      onClick={() => saveSuggested(p)}
+                      disabled={savedIds.has(p.id)}
+                      aria-label={savedIds.has(p.id) ? 'Saved' : `Save ${p.name}`}
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line text-ink-soft transition-colors hover:border-accent hover:text-accent-ink disabled:border-accent/40 disabled:text-accent-ink"
+                    >
+                      {savedIds.has(p.id) ? <Check size={14} /> : <Plus size={14} />}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {allPlaylists.length === 0 ? (
