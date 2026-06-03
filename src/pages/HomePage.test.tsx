@@ -19,26 +19,26 @@ describe('HomePage', () => {
     });
   });
 
-  it('should render the app header', () => {
+  it('should render the brand', () => {
     render(<HomePage />);
-
-    expect(screen.getByText('Harmonia')).toBeInTheDocument();
-    expect(screen.getByText(/Your music, perfectly organized/)).toBeInTheDocument();
+    // Appears in both the sidebar header and the mobile bar
+    expect(screen.getAllByText('Harmonia').length).toBeGreaterThan(0);
   });
 
-  it('should render all main sections', () => {
+  it('should render the view navigation', () => {
     render(<HomePage />);
 
-    // Check for navigation items
-    expect(screen.getByText('All Playlists')).toBeInTheDocument();
+    expect(screen.getByText('Library')).toBeInTheDocument();
     expect(screen.getByText('Favorites')).toBeInTheDocument();
-    expect(screen.getByText('By Genre')).toBeInTheDocument();
+    expect(screen.getByText('Genres')).toBeInTheDocument();
   });
 
-  it('should render playlist creation controls', () => {
+  it('should render the create actions', () => {
     render(<HomePage />);
 
-    expect(screen.getByText('Create Playlist')).toBeInTheDocument();
+    expect(screen.getByText('Create')).toBeInTheDocument();
+    expect(screen.getByText('Search')).toBeInTheDocument();
+    expect(screen.getByText('AI Chat')).toBeInTheDocument();
   });
 
   it('should render account controls', () => {
@@ -49,19 +49,17 @@ describe('HomePage', () => {
     expect(screen.getByText('Delete Account')).toBeInTheDocument();
   });
 
-  it('should render search panel', () => {
+  it('should default to the library view', () => {
     render(<HomePage />);
-
-    expect(screen.getByText('Search Songs')).toBeInTheDocument();
+    expect(screen.getByText('My Playlists')).toBeInTheDocument();
   });
 
-  it('should have responsive layout structure', () => {
+  it('should have the core layout structure', () => {
     const { container } = render(<HomePage />);
 
     expect(container.querySelector('.home-page')).toBeInTheDocument();
-    expect(container.querySelector('.app-header')).toBeInTheDocument();
-    expect(container.querySelector('.app-container')).toBeInTheDocument();
-    expect(container.querySelector('.toolbar')).toBeInTheDocument();
-    expect(container.querySelector('.tab-nav')).toBeInTheDocument();
+    expect(container.querySelector('.sidebar')).toBeInTheDocument();
+    expect(container.querySelector('.canvas')).toBeInTheDocument();
+    expect(container.querySelector('.blobs')).toBeInTheDocument();
   });
 });

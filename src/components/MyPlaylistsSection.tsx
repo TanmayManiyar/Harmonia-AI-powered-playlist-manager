@@ -1,39 +1,39 @@
 import React, { useState } from 'react';
 import { usePlaylistStore } from '../store';
 import { PlaylistCard } from './PlaylistCard';
+import { PlaylistDetailModal } from './PlaylistDetailModal';
 import './components.css';
 
 /**
- * MyPlaylistsSection component - Displays all playlists
- * Only one playlist can be expanded at a time (accordion)
+ * MyPlaylistsSection — grid of all playlists. Tapping a tile opens the
+ * detail modal.
  */
 export const MyPlaylistsSection: React.FC = () => {
   const playlists = usePlaylistStore((state) => state.getAllPlaylists());
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const handleToggle = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
+  const selected = playlists.find((p) => p.id === selectedId) ?? null;
 
   return (
-    <div className="my-playlists-section">
-      <h2>My Playlists</h2>
+    <div className="canvas-section">
+      <h2 className="section-title">My Playlists</h2>
       {playlists.length === 0 ? (
         <p className="empty-state">
           No playlists yet. Create your first playlist to get started!
         </p>
       ) : (
-        <div className="playlists-grid">
+        <div className="tiles-grid">
           {playlists.map((playlist) => (
-            <PlaylistCard
-              key={playlist.id}
-              playlist={playlist}
-              isExpanded={expandedId === playlist.id}
-              onToggle={handleToggle}
-            />
+            <PlaylistCard key={playlist.id} playlist={playlist} onOpen={setSelectedId} />
           ))}
         </div>
       )}
+
+      <PlaylistDetailModal
+        playlist={selected}
+        isOpen={selected !== null}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 };

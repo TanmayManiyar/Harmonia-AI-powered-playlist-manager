@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles, Bot, User, Loader2, Send } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
 import './components.css';
@@ -68,7 +69,7 @@ export const AIChatPanel: React.FC = () => {
   return (
     <div className="ai-chat-panel">
       <div className="chat-header">
-        <h2>✨ AI Playlist Generator</h2>
+        <h2><Sparkles size={20} /> AI Playlist Generator</h2>
         <p>Powered by Google Gemini</p>
       </div>
 
@@ -76,7 +77,7 @@ export const AIChatPanel: React.FC = () => {
         {messages.map((msg, i) => (
           <div key={i} className={`chat-message ${msg.role}`}>
             <div className="message-avatar">
-              {msg.role === 'assistant' ? '🤖' : '👤'}
+              {msg.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
             </div>
             <div className="message-content">
               {msg.content}
@@ -85,7 +86,7 @@ export const AIChatPanel: React.FC = () => {
         ))}
         {isLoading && (
           <div className="chat-message assistant">
-             <div className="message-avatar">🤖</div>
+             <div className="message-avatar"><Bot size={18} /></div>
              <div className="message-content typing-indicator">
                <span>.</span><span>.</span><span>.</span>
              </div>
@@ -102,12 +103,12 @@ export const AIChatPanel: React.FC = () => {
           disabled={isLoading}
           rows={2}
         />
-        <button 
-          onClick={handleSend} 
+        <button
+          onClick={handleSend}
           disabled={isLoading || !input.trim()}
           className="send-button"
         >
-          {isLoading ? '⏳' : 'Generate'}
+          {isLoading ? <Loader2 size={18} className="spin" /> : <><Send size={16} /> Generate</>}
         </button>
       </div>
     </div>

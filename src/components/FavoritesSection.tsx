@@ -1,39 +1,39 @@
 import React, { useState } from 'react';
 import { usePlaylistStore } from '../store';
 import { PlaylistCard } from './PlaylistCard';
+import { PlaylistDetailModal } from './PlaylistDetailModal';
 import './components.css';
 
 /**
- * FavoritesSection component - Displays favorite playlists
- * Only one playlist can be expanded at a time (accordion)
+ * FavoritesSection — grid of favorite playlists. Tapping a tile opens the
+ * detail modal.
  */
 export const FavoritesSection: React.FC = () => {
   const favoritePlaylists = usePlaylistStore((state) => state.getFavoritePlaylists());
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const handleToggle = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
+  const selected = favoritePlaylists.find((p) => p.id === selectedId) ?? null;
 
   return (
-    <div className="favorites-section">
-      <h2>Favorites</h2>
+    <div className="canvas-section">
+      <h2 className="section-title">Favorites</h2>
       {favoritePlaylists.length === 0 ? (
         <p className="empty-state">
-          No favorite playlists yet. Click the star icon on any playlist to add it to favorites!
+          No favorite playlists yet. Tap the heart on any playlist to add it to favorites!
         </p>
       ) : (
-        <div className="playlists-grid">
+        <div className="tiles-grid">
           {favoritePlaylists.map((playlist) => (
-            <PlaylistCard
-              key={playlist.id}
-              playlist={playlist}
-              isExpanded={expandedId === playlist.id}
-              onToggle={handleToggle}
-            />
+            <PlaylistCard key={playlist.id} playlist={playlist} onOpen={setSelectedId} />
           ))}
         </div>
       )}
+
+      <PlaylistDetailModal
+        playlist={selected}
+        isOpen={selected !== null}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 };

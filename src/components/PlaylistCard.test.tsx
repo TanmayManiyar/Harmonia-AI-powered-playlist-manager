@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { PlaylistCard } from './PlaylistCard';
 import { Playlist } from '../models';
 
@@ -27,29 +27,26 @@ describe('PlaylistCard', () => {
   });
 
   it('should render playlist name', () => {
-    render(<PlaylistCard playlist={mockPlaylist} isExpanded={false} onToggle={() => {}} />);
-    expect(screen.getByText('Rock Playlist')).toBeDefined();
+    render(<PlaylistCard playlist={mockPlaylist} onOpen={() => {}} />);
+    expect(screen.getByText('Rock Playlist')).toBeInTheDocument();
   });
 
-  it('should render playlist genre', () => {
-    render(<PlaylistCard playlist={mockPlaylist} isExpanded={false} onToggle={() => {}} />);
-    expect(screen.getByText(/Genre: Rock/)).toBeDefined();
+  it('should render genre and song count in the meta line', () => {
+    render(<PlaylistCard playlist={mockPlaylist} onOpen={() => {}} />);
+    expect(screen.getByText(/Rock · 1 songs/)).toBeInTheDocument();
   });
 
-  it('should render song count', () => {
-    render(<PlaylistCard playlist={mockPlaylist} isExpanded={false} onToggle={() => {}} />);
-    expect(screen.getByText(/1 songs/)).toBeDefined();
+  it('should call onOpen with the playlist id when the tile is clicked', () => {
+    const onOpen = vi.fn();
+    render(<PlaylistCard playlist={mockPlaylist} onOpen={onOpen} />);
+
+    fireEvent.click(screen.getByLabelText('Open Rock Playlist'));
+
+    expect(onOpen).toHaveBeenCalledWith('test-1');
   });
 
-  it('should render songs when expanded', () => {
-    render(<PlaylistCard playlist={mockPlaylist} isExpanded={true} onToggle={() => {}} />);
-    expect(screen.getByText('Bohemian Rhapsody')).toBeDefined();
-    expect(screen.getByText('Queen')).toBeDefined();
-  });
-
-  it('should show empty message when expanded with no songs', () => {
-    const emptyPlaylist = { ...mockPlaylist, songs: [] };
-    render(<PlaylistCard playlist={emptyPlaylist} isExpanded={true} onToggle={() => {}} />);
-    expect(screen.getByText('No songs in this playlist')).toBeDefined();
+  it('should expose a favorite control', () => {
+    render(<PlaylistCard playlist={mockPlaylist} onOpen={() => {}} />);
+    expect(screen.getByLabelText('Add to favorites')).toBeInTheDocument();
   });
 });

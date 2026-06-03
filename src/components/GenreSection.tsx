@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
 import { usePlaylistStore } from '../store';
 import { PlaylistCard } from './PlaylistCard';
+import { PlaylistDetailModal } from './PlaylistDetailModal';
 import './components.css';
 
 /**
- * GenreSection component - Displays playlists grouped by genre
- * Only one playlist can be expanded at a time across all genre groups (accordion)
+ * GenreSection — playlists grouped by genre. Tapping a tile opens the
+ * detail modal.
  */
 export const GenreSection: React.FC = () => {
   const playlistsByGenre = usePlaylistStore((state) => state.getPlaylistsByGenre());
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const allPlaylists = usePlaylistStore((state) => state.getAllPlaylists());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const handleToggle = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
+  const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
   const genreEntries = Array.from(playlistsByGenre.entries()).sort((a, b) =>
     a[0].localeCompare(b[0])
   );
 
   return (
-    <div className="genre-section">
-      <h2>Playlists by Genre</h2>
+    <div className="canvas-section">
+      <h2 className="section-title">Playlists by Genre</h2>
       {genreEntries.length === 0 ? (
         <p className="empty-state">
           No playlists yet. Create playlists to see them organized by genre!
@@ -31,20 +31,21 @@ export const GenreSection: React.FC = () => {
           {genreEntries.map(([genre, playlists]) => (
             <div key={genre} className="genre-group">
               <h3 className="genre-header">{genre}</h3>
-              <div className="playlists-grid">
+              <div className="tiles-grid">
                 {playlists.map((playlist) => (
-                  <PlaylistCard
-                    key={playlist.id}
-                    playlist={playlist}
-                    isExpanded={expandedId === playlist.id}
-                    onToggle={handleToggle}
-                  />
+                  <PlaylistCard key={playlist.id} playlist={playlist} onOpen={setSelectedId} />
                 ))}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <PlaylistDetailModal
+        playlist={selected}
+        isOpen={selected !== null}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 };

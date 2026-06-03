@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { Music } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { Blobs } from '../components/Blobs';
+import { ThemeToggle } from '../components/ThemeToggle';
 import './LoginPage.css';
 
 export const LoginPage: React.FC = () => {
@@ -30,12 +33,14 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="login-page">
-      <div className="login-bg"></div>
+      <Blobs />
 
       <div className="login-container">
-        <div className="login-card">
+        <div className="login-card glass">
           <div className="login-logo">
-            <span className="login-logo-icon">🎵</span>
+            <span className="login-logo-icon">
+              <Music size={30} strokeWidth={2.5} />
+            </span>
             <h1>Harmonia</h1>
             <p>{isRegister ? 'Create your account' : 'Sign in to manage your playlists'}</p>
           </div>
@@ -91,6 +96,8 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ThemeToggle />
     </div>
   );
 };
