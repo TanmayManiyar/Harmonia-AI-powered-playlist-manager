@@ -3,6 +3,7 @@ import { Song } from '../models';
 import { api } from '../services/api';
 import { usePlaylistStore } from '../store';
 import { Button } from './ui/button';
+import { BrowseGrid } from './BrowseGrid';
 import { cn } from '../lib/utils';
 
 /**
@@ -149,6 +150,11 @@ export const SearchPanel: React.FC = () => {
           </div>
         </div>
       )}
+
+      <div className="border-t border-line pt-5">
+        <p className="mb-4 text-sm text-muted">…or tap a vibe and we'll cook the whole playlist 🍳</p>
+        <BrowseGrid />
+      </div>
     </div>
   );
 };

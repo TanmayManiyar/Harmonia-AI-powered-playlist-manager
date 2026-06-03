@@ -6,7 +6,13 @@ import { api, DiscoverPlaylist, SuggestedPlaylist } from '../services/api';
 import { PlaylistCard } from './PlaylistCard';
 import { PlaylistDetailModal } from './PlaylistDetailModal';
 import { PlaylistCover } from './PlaylistCover';
+import { BrowseGrid } from './BrowseGrid';
 import { getRecentlyPlayed, recordRecentlyPlayed, RecentPlaylist } from '../lib/recentlyPlayed';
+import { CATEGORY_GROUPS } from '../lib/categories';
+
+const HOME_BROWSE = CATEGORY_GROUPS.filter(
+  (g) => g.title.startsWith('moods') || g.title.startsWith('charts')
+);
 
 const FORYOU_KEY = 'playlist-manager:foryou';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -232,6 +238,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
           )}
         </section>
       )}
+
+      <section className="mb-10">
+        <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">pick a vibe 🎟️</h2>
+        <BrowseGrid groups={HOME_BROWSE} limitPerGroup={4} />
+      </section>
 
       {allPlaylists.length === 0 ? (
         <p className="rounded-2xl border-2 border-dashed border-line bg-surface/50 px-7 py-14 text-center text-sm text-muted">

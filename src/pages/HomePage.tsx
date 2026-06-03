@@ -81,7 +81,7 @@ export const HomePage: React.FC = () => {
       <Modal isOpen={activeAction === 'venues'} onClose={() => setActiveAction(null)} title="Venue Playlists" size="lg">
         <VenuesPanel />
       </Modal>
-      <Modal isOpen={activeAction === 'search'} onClose={() => setActiveAction(null)} title="Search Songs">
+      <Modal isOpen={activeAction === 'search'} onClose={() => setActiveAction(null)} title="Search & Browse 🔎" size="lg">
         <SearchPanel />
       </Modal>
       <Modal isOpen={activeAction === 'ai'} onClose={() => setActiveAction(null)} size="lg">

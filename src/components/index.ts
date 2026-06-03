@@ -15,6 +15,7 @@ export { FavoritesSection } from './FavoritesSection';
 export { GenreSection } from './GenreSection';
 export { AIChatPanel } from './AIChatPanel';
 export { VenuesPanel } from './VenuesPanel';
+export { BrowseGrid } from './BrowseGrid';
 export { CommandPalette } from './CommandPalette';
 export { Sidebar } from './Sidebar';
 export { ThemeToggle } from './ThemeToggle';
