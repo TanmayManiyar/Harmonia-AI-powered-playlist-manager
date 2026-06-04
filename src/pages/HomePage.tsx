@@ -20,6 +20,7 @@ import { PlayerBar } from '../components/player/PlayerBar';
 import { NowPlayingPanel } from '../components/player/NowPlayingPanel';
 import { useAuthStore } from '../store/authStore';
 import { usePlaylistStore } from '../store';
+import { useMediaKeys } from '../hooks/useMediaKeys';
 
 export const HomePage: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewId>('home');
@@ -34,6 +35,8 @@ export const HomePage: React.FC = () => {
   const logout = useAuthStore((s) => s.logout);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
+
+  useMediaKeys();
 
   useEffect(() => {
     fetchPlaylists();
