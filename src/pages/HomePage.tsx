@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar, ViewId, ActionId } from '../components/Sidebar';
 import {
   HomeView,
@@ -84,12 +85,21 @@ export const HomePage: React.FC = () => {
       </div>
 
       <main className="canvas relative z-10 px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
-        <div key={activeView} className="mx-auto max-w-[1180px] motion-safe:animate-[fadeIn_.28s_ease-out]">
-          {activeView === 'home' && <HomeView userName={user?.name ?? ''} />}
-          {activeView === 'library' && <MyPlaylistsSection />}
-          {activeView === 'favorites' && <FavoritesSection />}
-          {activeView === 'genres' && <GenreSection />}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeView}
+            className="mx-auto max-w-[1180px]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {activeView === 'home' && <HomeView userName={user?.name ?? ''} />}
+            {activeView === 'library' && <MyPlaylistsSection />}
+            {activeView === 'favorites' && <FavoritesSection />}
+            {activeView === 'genres' && <GenreSection />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <Modal isOpen={activeAction === 'create'} onClose={() => setActiveAction(null)} title="Create Playlist">

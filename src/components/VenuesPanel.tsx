@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
+import { burstConfetti } from '../lib/confetti';
 import { cn } from '../lib/utils';
 
 interface Venue {
@@ -51,6 +52,7 @@ export const VenuesPanel: React.FC = () => {
       await api.createVenuePlaylist(venue.id);
       await fetchPlaylists();
       setState(venue.id, 'done');
+      burstConfetti();
       setTimeout(() => setState(venue.id, 'idle'), 2500);
     } catch {
       setState(venue.id, 'error');

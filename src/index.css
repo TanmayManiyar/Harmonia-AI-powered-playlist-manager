@@ -215,6 +215,22 @@
 }
 .now-glow { animation: nowGlow 2.2s ease-in-out infinite; }
 
+/* Shimmer skeleton loader */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--paper-2) 25%,
+    color-mix(in srgb, var(--line-strong) 55%, var(--paper-2)) 37%,
+    var(--paper-2) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

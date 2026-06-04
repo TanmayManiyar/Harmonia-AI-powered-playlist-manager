@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Play, Plus, Check, Loader2, RotateCw, Sparkles } from 'lucide-react';
 import { usePlaylistStore } from '../store';
+import { cn } from '../lib/utils';
 import { usePlayerStore } from '../store/playerStore';
 import { api, DiscoverPlaylist, SuggestedPlaylist } from '../services/api';
 import { PlaylistCard } from './PlaylistCard';
@@ -8,6 +9,7 @@ import { PlaylistDetailModal } from './PlaylistDetailModal';
 import { PlaylistCover } from './PlaylistCover';
 import { BrowseGrid } from './BrowseGrid';
 import { getRecentlyPlayed, recordRecentlyPlayed, RecentPlaylist } from '../lib/recentlyPlayed';
+import { burstConfetti } from '../lib/confetti';
 
 const FORYOU_KEY = 'playlist-manager:foryou';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -39,12 +41,28 @@ const greeting = () => {
   return 'evening, fam';
 };
 
+/** A single "Your Vibe" stat tile. */
+const Stat: React.FC<{ label: string; value: React.ReactNode; accent?: boolean }> = ({ label, value, accent }) => (
+  <div className={cn('min-w-[6.5rem] rounded-xl border-2 px-4 py-2.5', accent ? 'border-accent bg-accent/10' : 'border-line bg-surface')}>
+    <div className="truncate font-display text-xl font-bold leading-tight text-ink">{value}</div>
+    <div className="text-[0.7rem] font-medium text-muted">{label}</div>
+  </div>
+);
+
 /** Horizontal, side-scrolling section. */
 const Row: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-10">
     <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">{title}</h2>
     <div className="scroll-funky -mx-1 flex gap-4 overflow-x-auto px-1 pb-2.5">{children}</div>
   </section>
+);
+
+/** Shimmer placeholder card while a row loads. */
+const SkeletonCard: React.FC = () => (
+  <div className="w-44 shrink-0">
+    <div className="skeleton aspect-[4/3] w-full rounded-md" />
+    <div className="skeleton mt-2.5 h-3 w-3/4 rounded" />
+  </div>
 );
 
 interface HomeViewProps {
@@ -59,6 +77,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
   const [recent, setRecent] = useState<RecentPlaylist[]>([]);
   const [popular, setPopular] = useState<DiscoverPlaylist[]>([]);
+  const [popularLoading, setPopularLoading] = useState(true);
   const [forYou, setForYou] = useState<SuggestedPlaylist[]>([]);
   const [forYouLoading, setForYouLoading] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -76,10 +95,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   }, []);
 
   useEffect(() => {
+    setPopularLoading(true);
     api
       .getDiscover()
       .then((d) => setPopular(d.popular))
-      .catch(() => setPopular([]));
+      .catch(() => setPopular([]))
+      .finally(() => setPopularLoading(false));
   }, []);
 
   // Generate on demand (not auto) — Gemini calls are precious on the free tier.
@@ -121,6 +142,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       await api.createPlaylist(p.genre, p.name, p.songs);
       await fetchPlaylists();
       setSavedIds((prev) => new Set(prev).add(p.id));
+      burstConfetti();
     } catch {
       /* ignore */
     }
@@ -135,6 +157,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       await api.chatWithAI(`A playlist for this exact vibe: ${mood}. Match the energy and mood closely.`, mood, 'Mood');
       await fetchPlaylists();
       setMoodText('');
+      burstConfetti();
     } catch (e: any) {
       setMoodError(e?.message || 'could not cook that one — try again');
     } finally {
@@ -166,11 +189,36 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
   const genreEntries = Array.from(byGenre.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
+  const stats = useMemo(() => {
+    let songCount = 0;
+    let likedCount = 0;
+    const genreCounts: Record<string, number> = {};
+    for (const p of allPlaylists) {
+      songCount += p.songs.length;
+      if (p.name === 'Liked Songs') likedCount = p.songs.length;
+      else genreCounts[p.genre] = (genreCounts[p.genre] || 0) + p.songs.length;
+    }
+    const topGenre = Object.entries(genreCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+    return { playlistCount: allPlaylists.length, songCount, topGenre, likedCount };
+  }, [allPlaylists]);
+
   return (
     <div>
       <h1 className="mb-8 font-display text-4xl font-bold tracking-tight text-ink">
         {greeting()}{userName ? `, ${userName.split(' ')[0]}` : ''} <span className="text-gradient">🎧</span>
       </h1>
+
+      {allPlaylists.length > 0 && (
+        <section className="mb-9">
+          <h2 className="mb-3 font-display text-xl font-bold tracking-tight text-ink">your vibe ✨</h2>
+          <div className="flex flex-wrap gap-3">
+            <Stat label="playlists" value={stats.playlistCount} />
+            <Stat label="songs" value={stats.songCount} />
+            <Stat label="top genre" value={stats.topGenre} accent />
+            <Stat label="liked" value={stats.likedCount} />
+          </div>
+        </section>
+      )}
 
       {recent.length > 0 && (
         <Row title="On Repeat 🔁">
@@ -190,7 +238,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
         </Row>
       )}
 
-      {popular.length > 0 && (
+      {popularLoading && (
+        <Row title="Trending rn 🔥">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </Row>
+      )}
+
+      {!popularLoading && popular.length > 0 && (
         <Row title="Trending rn 🔥">
           {popular.map((p) => (
             <button

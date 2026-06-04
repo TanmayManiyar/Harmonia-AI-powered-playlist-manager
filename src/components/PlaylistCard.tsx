@@ -43,7 +43,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen, in
 
   return (
     <button
-      className="playlist-tile group flex flex-col overflow-hidden rounded-md border border-line bg-surface text-left shadow-[var(--shadow)] transition-all duration-200 hover:-translate-y-1 hover:border-line-strong hover:shadow-[var(--shadow-lg)]"
+      className="playlist-tile group flex flex-col overflow-hidden rounded-md border border-line bg-surface text-left shadow-[var(--shadow)] transition-all duration-200 hover:-translate-y-1 hover:border-line-strong hover:shadow-[var(--shadow-lg)] active:translate-y-0 active:scale-[0.98]"
       onClick={() => onOpen(playlist.id)}
       aria-label={`Open ${playlist.name}`}
     >

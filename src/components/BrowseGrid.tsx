@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, Check } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
+import { burstConfetti } from '../lib/confetti';
 import { CATEGORY_GROUPS, CategoryGroup, Category } from '../lib/categories';
 
 const COLOR_SETS = [
@@ -46,6 +47,7 @@ export const BrowseGrid: React.FC<BrowseGridProps> = ({
       await fetchPlaylists();
       onAfterCreate?.();
       set(c.id, 'done');
+      burstConfetti();
       setTimeout(() => set(c.id, 'idle'), 2500);
     } catch {
       set(c.id, 'error');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
+import { burstConfetti } from '../lib/confetti';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
@@ -37,6 +38,7 @@ export const PlaylistCreationPanel: React.FC = () => {
       const prompt = `Create a ${trimmedGenre} playlist. Include exactly 10 songs. Ensure the songs are distributed across these languages: ${selectedLanguages.join(', ')}.`;
       const newPlaylist = await api.chatWithAI(prompt, undefined, trimmedGenre);
       await fetchPlaylists();
+      burstConfetti();
       setMessage({
         type: 'success',
         text: `Playlist "${newPlaylist.name}" created with ${newPlaylist.songs?.length || 0} songs (${selectedLanguages.join(', ')}) via AI!`,
