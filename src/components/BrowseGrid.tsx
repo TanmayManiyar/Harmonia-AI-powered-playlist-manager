@@ -18,7 +18,7 @@ type TileState = 'idle' | 'loading' | 'done' | 'error';
 interface BrowseGridProps {
   groups?: CategoryGroup[];
   /** Show only the first N tiles of each group (compact / home). */
-  limitPerGroup?: number;
+  limitPerGroup?: number | undefined;
   onAfterCreate?: () => void;
 }
 

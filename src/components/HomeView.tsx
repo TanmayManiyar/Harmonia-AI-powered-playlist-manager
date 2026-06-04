@@ -70,6 +70,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const [moodText, setMoodText] = useState('');
   const [moodLoading, setMoodLoading] = useState(false);
   const [moodError, setMoodError] = useState('');
+  const [showAllVibes, setShowAllVibes] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
@@ -284,7 +285,18 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
         {moodError && (
           <div className="mb-4 rounded-lg border border-danger/40 px-3 py-2 text-sm text-danger">{moodError}</div>
         )}
-        <BrowseGrid groups={HOME_BROWSE} limitPerGroup={4} />
+        <BrowseGrid
+          groups={showAllVibes ? CATEGORY_GROUPS : HOME_BROWSE}
+          limitPerGroup={showAllVibes ? undefined : 4}
+        />
+        <div className="mt-1 flex justify-center">
+          <button
+            onClick={() => setShowAllVibes((v) => !v)}
+            className="rounded-full border-2 border-line-strong px-5 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-accent hover:text-accent-ink"
+          >
+            {showAllVibes ? 'see less' : 'see more'}
+          </button>
+        </div>
       </section>
 
       {allPlaylists.length === 0 ? (
