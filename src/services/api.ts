@@ -152,6 +152,20 @@ class ApiClient {
     if (genre) params.set('genre', genre);
     return this.request<Song[]>(`/youtube/search?${params.toString()}`);
   }
+
+  /** Lazily resolve one song to a YouTube video id (on play). */
+  async resolveSong(title: string, artist: string) {
+    const params = new URLSearchParams({ title, artist });
+    return this.request<{ youtubeId: string }>(`/youtube/resolve?${params.toString()}`);
+  }
+
+  /** Persist a resolved video id back to a playlist song (fire-and-forget). */
+  saveSongYoutubeId(playlistId: string, songId: string, youtubeId: string) {
+    return this.request(`/playlists/${playlistId}/songs/${encodeURIComponent(songId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ youtubeId }),
+    }).catch(() => undefined);
+  }
   // YouTube Sync
   async getYouTubeStatus() {
     return this.request<{ connected: boolean }>('/youtube-sync/status');

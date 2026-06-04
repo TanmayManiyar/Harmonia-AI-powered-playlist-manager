@@ -144,5 +144,11 @@ vi.mock('../services/api', () => ({
     markPlayed() {
       return Promise.resolve(undefined)
     },
+    async resolveSong() {
+      return { youtubeId: '' }
+    },
+    saveSongYoutubeId() {
+      return Promise.resolve(undefined)
+    },
   },
 }))

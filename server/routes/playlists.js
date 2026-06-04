@@ -204,6 +204,24 @@ router.delete('/:id/songs/:songId', async (req, res) => {
   }
 });
 
+// PATCH /api/playlists/:id/songs/:songId — persist a lazily-resolved youtubeId
+router.patch('/:id/songs/:songId', async (req, res) => {
+  try {
+    const playlist = await Playlist.findOne({ _id: req.params.id, userId: req.userId });
+    if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+    const song = playlist.songs.find((s) => s.id === req.params.songId);
+    if (!song) return res.status(404).json({ error: 'Song not found' });
+    if (typeof req.body?.youtubeId === 'string') {
+      song.youtubeId = req.body.youtubeId;
+      await playlist.save();
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Patch song error:', error);
+    res.status(500).json({ error: 'Failed to update song' });
+  }
+});
+
 // POST /api/playlists/:id/share — create (or return existing) share link
 router.post('/:id/share', async (req, res) => {
   try {

@@ -121,7 +121,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   };
 
   const handlePlayAll = () => {
-    const queued = playQueue(playlist.songs, 0);
+    const queued = playQueue(playlist.songs, 0, playlist.id);
     if (queued === 0) flash('error', 'No playable tracks in this playlist yet.');
     else recordPlayed();
   };
@@ -129,7 +129,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   const handlePlaySong = (songId: string) => {
     const idx = playlist.songs.findIndex((s) => s.id === songId);
     if (idx >= 0) {
-      playQueue(playlist.songs, idx);
+      playQueue(playlist.songs, idx, playlist.id);
       recordPlayed();
     }
   };

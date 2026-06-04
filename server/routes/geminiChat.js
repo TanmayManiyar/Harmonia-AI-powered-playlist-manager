@@ -1,21 +1,12 @@
 import express from 'express';
-import axios from 'axios';
 import Playlist from '../models/Playlist.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { normalizeString, escapeRegExp } from '../utils/validation.js';
 import { curatPlaylistFromChat } from '../services/gemini.js';
 import { VENUES } from '../services/venuePrompts.js';
-import { cacheGet, cacheSet } from '../services/cache.js';
-
 const router = express.Router();
-const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
-const RESOLVE_TTL = 24 * 60 * 60 * 1000; // song→video mapping is stable for a day
 
 router.use(authenticate);
-
-function getApiKey() {
-  return process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY || '';
-}
 
 /** Build the "Title by Artist" exclusion list from all of a user's songs. */
 async function buildExcludeList(userId) {
@@ -25,49 +16,23 @@ async function buildExcludeList(userId) {
   return exclude;
 }
 
-/** Resolve a single title/artist to a YouTube video id, caching only hits. */
-async function resolveOne(title, artist, apiKey) {
-  const key = `yt:resolve:${title.toLowerCase()}|${artist.toLowerCase()}`;
-  const hit = cacheGet(key);
-  if (hit !== undefined) return hit;
-  try {
-    const r = await axios.get(`${YOUTUBE_BASE_URL}/search`, {
-      params: { part: 'snippet', q: `${title} ${artist} audio`, type: 'video', videoCategoryId: '10', maxResults: 1, key: apiKey },
-    });
-    const id = r.data.items?.[0]?.id?.videoId || '';
-    if (id) cacheSet(key, id, RESOLVE_TTL); // never cache failures/empties
-    return id;
-  } catch (err) {
-    console.error(`Failed to fetch YouTube ID for ${title}:`, err.response?.data || err.message);
-    return '';
-  }
-}
-
 /**
- * Resolve all AI songs to YouTube ids — de-duplicated (same song searched
- * once), cached across playlists, and resolved in parallel instead of N+1.
+ * Shape AI songs into our song schema WITHOUT resolving YouTube ids.
+ * Resolution happens lazily on first play (GET /api/youtube/resolve), so
+ * generating a playlist costs zero YouTube quota.
  */
-async function resolveSongs(aiSongs, genre) {
-  const ytApiKey = getApiKey();
+function resolveSongs(aiSongs, genre) {
   const ts = Date.now();
-  const inflight = new Map(); // title|artist -> Promise<videoId>
-  const resolve = (t, a) => {
-    const k = `${t.toLowerCase()}|${a.toLowerCase()}`;
-    if (!inflight.has(k)) inflight.set(k, ytApiKey ? resolveOne(t, a, ytApiKey) : Promise.resolve(''));
-    return inflight.get(k);
-  };
-  return Promise.all(
-    aiSongs.map(async (song, index) => ({
-      id: `ai-${ts}-${index}`,
-      title: song.title,
-      artist: song.artist,
-      genre,
-      language: song.language || 'English',
-      isCustom: false,
-      duration: 0,
-      youtubeId: await resolve(song.title, song.artist),
-    }))
-  );
+  return aiSongs.map((song, index) => ({
+    id: `ai-${ts}-${index}`,
+    title: song.title,
+    artist: song.artist,
+    genre,
+    language: song.language || 'English',
+    isCustom: false,
+    duration: 0,
+    youtubeId: '',
+  }));
 }
 
 /** The user's strongest genres, blended with any recent-play genres. */

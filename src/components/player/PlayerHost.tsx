@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { usePlayerStore } from '../../store/playerStore';
+import { usePlaylistStore } from '../../store';
+import { api } from '../../services/api';
 
 let apiPromise: Promise<void> | null = null;
 
@@ -60,7 +62,7 @@ export const PlayerHost: React.FC = () => {
           },
           onStateChange: (e: any) => {
             // YT.PlayerState.ENDED === 0
-            if (e.data === 0) usePlayerStore.getState().next();
+            if (e.data === 0) usePlayerStore.getState().onTrackEnd();
           },
         },
       });
@@ -69,6 +71,32 @@ export const PlayerHost: React.FC = () => {
       cancelled = true;
     };
   }, []);
+
+  // Lazily resolve the current song's video id on play (then persist it)
+  const resolvingRef = useRef<string>('');
+  useEffect(() => {
+    if (!current || current.youtubeId) return;
+    if (resolvingRef.current === current.id) return;
+    resolvingRef.current = current.id;
+    const songId = current.id;
+    api
+      .resolveSong(current.title, current.artist)
+      .then(({ youtubeId }) => {
+        const st = usePlayerStore.getState();
+        if (st.queue[st.index]?.id !== songId) return; // moved on already
+        if (youtubeId) {
+          st.resolveCurrent(youtubeId);
+          if (st.queuePlaylistId) {
+            api.saveSongYoutubeId(st.queuePlaylistId, songId, youtubeId);
+            usePlaylistStore.getState().setSongYoutubeId(st.queuePlaylistId, songId, youtubeId);
+          }
+        } else {
+          st.pause(); // nothing found — don't spin through the queue
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, current?.youtubeId]);
 
   // Load a new video when the current track changes
   useEffect(() => {
@@ -110,12 +138,18 @@ export const PlayerHost: React.FC = () => {
   // Poll progress while playing
   useEffect(() => {
     const id = setInterval(() => {
+      const st = usePlayerStore.getState();
+      // Sleep timer
+      if (st.sleepAt && Date.now() >= st.sleepAt) {
+        st.pause();
+        st.setSleepTimer(null);
+        return;
+      }
       if (!readyRef.current || !playerRef.current) return;
-      const { isPlaying: playing } = usePlayerStore.getState();
-      if (!playing) return;
+      if (!st.isPlaying) return;
       const t = playerRef.current.getCurrentTime?.() ?? 0;
       const d = playerRef.current.getDuration?.() ?? 0;
-      usePlayerStore.getState().setProgress(t, d);
+      st.setProgress(t, d);
     }, 500);
     return () => clearInterval(id);
   }, []);

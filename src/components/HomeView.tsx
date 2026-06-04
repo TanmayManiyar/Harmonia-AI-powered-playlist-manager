@@ -142,7 +142,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   });
 
   const playRecent = (p: RecentPlaylist) => {
-    if (playQueue(p.songs, 0) > 0) {
+    if (playQueue(p.songs, 0, p.id || null) > 0) {
       recordRecentlyPlayed(p);
       if (p.id) api.markPlayed(p.id);
     }
@@ -150,7 +150,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
   const playDiscover = (p: DiscoverPlaylist) => {
     const r = toRecent(p);
-    if (playQueue(r.songs, 0) > 0) {
+    if (playQueue(r.songs, 0, r.id || null) > 0) {
       recordRecentlyPlayed(r);
       if (r.id) api.markPlayed(r.id);
     }

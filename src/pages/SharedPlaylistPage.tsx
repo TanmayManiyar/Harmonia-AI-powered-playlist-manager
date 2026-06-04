@@ -44,8 +44,8 @@ export const SharedPlaylistPage: React.FC = () => {
 
   const playFrom = (i: number) => {
     if (!playlist) return;
-    if (playQueue(songs, i) > 0) {
-      const id = playlist._id || playlist.id || '';
+    const id = playlist._id || playlist.id || '';
+    if (playQueue(songs, i, id || null) > 0) {
       recordRecentlyPlayed({ id, name: playlist.name, genre: playlist.genre, songs });
       if (id) api.markPlayed(id);
     }

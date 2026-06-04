@@ -18,6 +18,7 @@ interface PlaylistState {
   addSongToPlaylist: (playlistId: string, song: Song) => Promise<void>;
   removeSongFromPlaylist: (playlistId: string, songId: string) => Promise<void>;
   reorderSongs: (playlistId: string, fromIndex: number, toIndex: number) => Promise<void>;
+  setSongYoutubeId: (playlistId: string, songId: string, youtubeId: string) => void;
   toggleFavorite: (playlistId: string) => Promise<void>;
   updatePlaylistName: (playlistId: string, name: string) => Promise<void>;
   setLanguagePreference: (language: string) => void;
@@ -149,6 +150,17 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       console.error('Failed to reorder songs:', error);
       await get().fetchPlaylists(); // revert to server truth
     }
+  },
+
+  setSongYoutubeId: (playlistId: string, songId: string, youtubeId: string) => {
+    set((state) => {
+      const pl = state.playlists.get(playlistId);
+      if (!pl) return {};
+      const songs = pl.songs.map((s) => (s.id === songId ? { ...s, youtubeId } : s));
+      const newPlaylists = new Map(state.playlists);
+      newPlaylists.set(playlistId, { ...pl, songs });
+      return { playlists: newPlaylists };
+    });
   },
 
   toggleFavorite: async (playlistId: string) => {

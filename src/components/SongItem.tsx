@@ -21,7 +21,7 @@ export const SongItem: React.FC<SongItemProps> = ({
   showRemoveButton = true,
   isActive = false,
 }) => {
-  const playable = Boolean(song.youtubeId);
+  const playable = Boolean(song.title); // resolvable on play even without a stored id
 
   return (
     <div className="group flex items-center justify-between gap-3 rounded border border-transparent px-2 py-2 transition-colors hover:border-line hover:bg-paper-2">

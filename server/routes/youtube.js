@@ -143,6 +143,35 @@ router.get('/search', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/youtube/resolve?title=...&artist=...
+ * Resolve ONE song to a YouTube video id (cached). Called lazily when a song
+ * without a stored id is played, so playlists cost zero quota until listened to.
+ */
+router.get('/resolve', async (req, res) => {
+  const title = (req.query.title || '').toString().trim();
+  const artist = (req.query.artist || '').toString().trim();
+  if (!title) return res.json({ youtubeId: '' });
+
+  const key = `yt:resolve:${title.toLowerCase()}|${artist.toLowerCase()}`;
+  const hit = cacheGet(key);
+  if (hit !== undefined) return res.json({ youtubeId: hit });
+
+  if (!getApiKey()) return res.json({ youtubeId: '' });
+
+  try {
+    const r = await axios.get(`${YOUTUBE_BASE_URL}/search`, {
+      params: { part: 'snippet', q: `${title} ${artist} audio`, type: 'video', videoCategoryId: '10', maxResults: 1, key: getApiKey() },
+    });
+    const id = r.data.items?.[0]?.id?.videoId || '';
+    if (id) cacheSet(key, id, 24 * 60 * 60 * 1000); // cache hits for a day
+    res.json({ youtubeId: id });
+  } catch (error) {
+    console.error('YouTube resolve error:', error.response?.data?.error?.message || error.message);
+    res.json({ youtubeId: '' });
+  }
+});
+
 // ---- Helpers ----
 
 function extractSongInfo(videoTitle) {

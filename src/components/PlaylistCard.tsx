@@ -29,7 +29,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen, in
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const queued = playQueue(playlist.songs, 0);
+    const queued = playQueue(playlist.songs, 0, playlist.id);
     if (queued > 0) {
       recordRecentlyPlayed({
         id: playlist.id,
