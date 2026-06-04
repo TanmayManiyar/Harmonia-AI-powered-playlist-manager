@@ -71,7 +71,7 @@ export const BrowseGrid: React.FC<BrowseGridProps> = ({
                     style={{ background: cs.bg, color: cs.fg }}
                   >
                     <span className="relative z-10 block max-w-[80%] text-sm font-bold leading-tight">{c.label}</span>
-                    <span className="pointer-events-none absolute -bottom-2 -right-1 rotate-12 text-4xl opacity-90">{c.emoji}</span>
+                    <span className="pointer-events-none absolute -bottom-3 -right-1 rotate-12 text-6xl opacity-95">{c.emoji}</span>
                     {st === 'loading' && (
                       <span className="absolute inset-0 z-20 grid place-items-center bg-black/25 text-white">
                         <Loader2 size={20} className="animate-spin" />
