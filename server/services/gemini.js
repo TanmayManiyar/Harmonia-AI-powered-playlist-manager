@@ -33,7 +33,9 @@ ${excludeList.length > 0 ? excludeList.map(s => `- ${s}`).join('\n') : "No exclu
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      // 2.5-flash-lite has a more generous free-tier daily limit than 2.5-flash.
+      // Override with GEMINI_MODEL in .env if you have billing / a paid plan.
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
       contents: userPrompt,
       config: {
         systemInstruction,
@@ -56,6 +58,10 @@ ${excludeList.length > 0 ? excludeList.map(s => `- ${s}`).join('\n') : "No exclu
     return parsedResponse;
   } catch (error) {
     console.error('Gemini API Error:', error);
-    throw new Error('Failed to generate playlist from Gemini: ' + error.message);
+    const msg = String(error?.message || '');
+    if (msg.includes('429') || /quota|RESOURCE_EXHAUSTED|rate.?limit/i.test(msg)) {
+      throw new Error("Gemini is out of free quota for now — it resets daily. Try again later or add billing to your Google AI key.");
+    }
+    throw new Error('Failed to generate playlist from Gemini: ' + msg);
   }
 };

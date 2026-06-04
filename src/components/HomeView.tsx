@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Play, Plus, Check, Loader2, RotateCw } from 'lucide-react';
+import { Play, Plus, Check, Loader2, RotateCw, Sparkles } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore } from '../store/playerStore';
 import { api, DiscoverPlaylist, SuggestedPlaylist } from '../services/api';
@@ -69,6 +69,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [moodText, setMoodText] = useState('');
   const [moodLoading, setMoodLoading] = useState(false);
+  const [moodError, setMoodError] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
@@ -86,14 +87,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       .catch(() => setPopular([]));
   }, []);
 
-  const fetchForYou = (force = false) => {
-    if (!force) {
-      const cached = loadForYouCache();
-      if (cached && cached.length > 0) {
-        setForYou(cached);
-        return;
-      }
-    }
+  // Generate on demand (not auto) — Gemini calls are precious on the free tier.
+  const fetchForYou = () => {
     setForYouLoading(true);
     const genres = [...new Set(getRecentlyPlayed().map((r) => r.genre).filter(Boolean))];
     api
@@ -106,8 +101,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       .finally(() => setForYouLoading(false));
   };
 
+  // Show today's cached recs if we already generated them; never auto-call.
   useEffect(() => {
-    fetchForYou();
+    const cached = loadForYouCache();
+    if (cached && cached.length > 0) setForYou(cached);
   }, []);
 
   const playSuggested = (p: SuggestedPlaylist) => {
@@ -130,12 +127,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
     const mood = moodText.trim();
     if (!mood || moodLoading) return;
     setMoodLoading(true);
+    setMoodError('');
     try {
       await api.chatWithAI(`A playlist for this exact vibe: ${mood}. Match the energy and mood closely.`, mood, 'Mood');
       await fetchPlaylists();
       setMoodText('');
-    } catch {
-      /* ignore */
+    } catch (e: any) {
+      setMoodError(e?.message || 'could not cook that one — try again');
     } finally {
       setMoodLoading(false);
     }
@@ -209,23 +207,32 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
         </Row>
       )}
 
-      {(forYou.length > 0 || forYouLoading) && (
-        <section className="mb-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold tracking-tight text-ink">Made 4 U fr</h2>
+      <section className="mb-10">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-xl font-bold tracking-tight text-ink">Made 4 U fr</h2>
+          {forYou.length > 0 && (
             <button
-              onClick={() => fetchForYou(true)}
+              onClick={fetchForYou}
               disabled={forYouLoading}
               className="flex items-center gap-1.5 text-xs font-medium text-muted transition-colors hover:text-ink disabled:opacity-50"
             >
-              <RotateCw size={13} className={forYouLoading ? 'animate-spin' : ''} /> Refresh
+              <RotateCw size={13} className={forYouLoading ? 'animate-spin' : ''} /> refresh
             </button>
+          )}
+        </div>
+        {forYouLoading ? (
+          <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted">
+            <Loader2 size={16} className="animate-spin" /> cooking up your recs… 👨‍🍳
           </div>
-          {forYouLoading && forYou.length === 0 ? (
-            <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted">
-              <Loader2 size={16} className="animate-spin" /> cooking up your recs… 👨‍🍳
-            </div>
-          ) : (
+        ) : forYou.length === 0 ? (
+          <button
+            onClick={fetchForYou}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line-strong px-6 py-8 text-sm font-semibold text-ink-soft transition-colors hover:border-accent hover:text-accent-ink"
+          >
+            <Sparkles size={16} /> cook my recs ✨ <span className="text-xs font-normal text-muted">(uses AI)</span>
+          </button>
+        ) : (
+          <>
             <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
               {forYou.map((p) => (
                 <div
@@ -252,9 +259,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
                 </div>
               ))}
             </div>
-          )}
-        </section>
-      )}
+          </>
+        )}
+      </section>
 
       <section className="mb-10">
         <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">pick a vibe 🎟️</h2>
@@ -274,6 +281,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
             {moodLoading ? 'cooking…' : 'cook it 🍳'}
           </button>
         </div>
+        {moodError && (
+          <div className="mb-4 rounded-lg border border-danger/40 px-3 py-2 text-sm text-danger">{moodError}</div>
+        )}
         <BrowseGrid groups={HOME_BROWSE} limitPerGroup={4} />
       </section>
 
