@@ -164,6 +164,25 @@
   background: #ffd60a;
 }
 
+/* Decorative diagonal ripple of colorful squares (with a hard slant shadow) */
+.ripple-grid {
+  display: grid;
+  gap: 13px;
+  pointer-events: none;
+}
+.ripple-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  box-shadow: 5px 8px 0 0 rgba(16, 13, 22, 0.32);
+  animation: rippleWave 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes rippleWave {
+  0%, 100% { transform: translate(0, 0) scale(0.55); opacity: 0.35; }
+  45% { transform: translate(3px, -9px) scale(1.18); opacity: 1; }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

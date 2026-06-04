@@ -14,6 +14,7 @@ import {
   Modal,
   ThemeToggle,
 } from '../components';
+import { RippleDots } from '../components/RippleDots';
 import { PlayerHost } from '../components/player/PlayerHost';
 import { PlayerBar } from '../components/player/PlayerBar';
 import { NowPlayingPanel } from '../components/player/NowPlayingPanel';
@@ -66,7 +67,12 @@ export const HomePage: React.FC = () => {
         onDeleteAccount={() => { setDeleteError(''); setShowDeleteStep1(true); }}
       />
 
-      <main className="canvas px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
+      {/* Decorative diagonal ripple, tucked top-right behind the content */}
+      <div className="pointer-events-none fixed right-8 top-24 z-0 hidden -rotate-12 opacity-80 lg:block">
+        <RippleDots />
+      </div>
+
+      <main className="canvas relative z-10 px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
         <div key={activeView} className="mx-auto max-w-[1180px] motion-safe:animate-[fadeIn_.28s_ease-out]">
           {activeView === 'home' && <HomeView userName={user?.name ?? ''} />}
           {activeView === 'library' && <MyPlaylistsSection />}
