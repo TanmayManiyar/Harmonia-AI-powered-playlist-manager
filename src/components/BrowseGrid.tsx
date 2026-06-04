@@ -32,9 +32,11 @@ export const BrowseGrid: React.FC<BrowseGridProps> = ({
   onAfterCreate,
 }) => {
   const [states, setStates] = useState<Record<string, TileState>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
 
   const set = (id: string, st: TileState) => setStates((p) => ({ ...p, [id]: st }));
+  const toggleGroup = (title: string) => setExpanded((p) => ({ ...p, [title]: !p[title] }));
 
   const tap = async (c: Category) => {
     if (states[c.id] === 'loading') return;
@@ -54,10 +56,22 @@ export const BrowseGrid: React.FC<BrowseGridProps> = ({
   return (
     <div>
       {groups.map((group) => {
-        const items = limitPerGroup ? group.items.slice(0, limitPerGroup) : group.items;
+        const isExpanded = !!expanded[group.title];
+        const canExpand = limitPerGroup != null && group.items.length > limitPerGroup;
+        const items = limitPerGroup != null && !isExpanded ? group.items.slice(0, limitPerGroup) : group.items;
         return (
           <div key={group.title} className="mb-7">
-            <h3 className="mb-3 font-display text-base font-bold tracking-tight text-ink">{group.title}</h3>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="font-display text-base font-bold tracking-tight text-ink">{group.title}</h3>
+              {canExpand && (
+                <button
+                  onClick={() => toggleGroup(group.title)}
+                  className="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold text-accent-ink transition-colors hover:bg-accent/10"
+                >
+                  {isExpanded ? 'see less' : 'see all'}
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {items.map((c, i) => {
                 const cs = COLOR_SETS[i % COLOR_SETS.length]!;

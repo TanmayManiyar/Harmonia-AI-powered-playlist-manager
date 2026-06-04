@@ -8,11 +8,6 @@ import { PlaylistDetailModal } from './PlaylistDetailModal';
 import { PlaylistCover } from './PlaylistCover';
 import { BrowseGrid } from './BrowseGrid';
 import { getRecentlyPlayed, recordRecentlyPlayed, RecentPlaylist } from '../lib/recentlyPlayed';
-import { CATEGORY_GROUPS } from '../lib/categories';
-
-const HOME_BROWSE = CATEGORY_GROUPS.filter(
-  (g) => g.title.startsWith('moods') || g.title.startsWith('charts')
-);
 
 const FORYOU_KEY = 'playlist-manager:foryou';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -70,7 +65,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const [moodText, setMoodText] = useState('');
   const [moodLoading, setMoodLoading] = useState(false);
   const [moodError, setMoodError] = useState('');
-  const [showAllVibes, setShowAllVibes] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
@@ -285,18 +279,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
         {moodError && (
           <div className="mb-4 rounded-lg border border-danger/40 px-3 py-2 text-sm text-danger">{moodError}</div>
         )}
-        <BrowseGrid
-          groups={showAllVibes ? CATEGORY_GROUPS : HOME_BROWSE}
-          limitPerGroup={showAllVibes ? undefined : 4}
-        />
-        <div className="mt-1 flex justify-center">
-          <button
-            onClick={() => setShowAllVibes((v) => !v)}
-            className="rounded-full border-2 border-line-strong px-5 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-accent hover:text-accent-ink"
-          >
-            {showAllVibes ? 'see less' : 'see more'}
-          </button>
-        </div>
+        <BrowseGrid limitPerGroup={4} />
       </section>
 
       {allPlaylists.length === 0 ? (
