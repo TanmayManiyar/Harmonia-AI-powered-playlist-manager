@@ -1,12 +1,15 @@
 import React from 'react';
-import { Play } from 'lucide-react';
+import { Play, Heart } from 'lucide-react';
 import { Song } from '../models';
 import { SongThumb } from './SongThumb';
+import { cn } from '../lib/utils';
 
 interface SongItemProps {
   song: Song;
   onRemove?: (songId: string) => void;
   onPlay?: (song: Song) => void;
+  onLike?: (song: Song) => void;
+  liked?: boolean;
   showRemoveButton?: boolean;
   isActive?: boolean;
 }
@@ -18,6 +21,8 @@ export const SongItem: React.FC<SongItemProps> = ({
   song,
   onRemove,
   onPlay,
+  onLike,
+  liked = false,
   showRemoveButton = true,
   isActive = false,
 }) => {
@@ -61,15 +66,29 @@ export const SongItem: React.FC<SongItemProps> = ({
           </div>
         </div>
       </div>
-      {showRemoveButton && onRemove && (
-        <button
-          className="shrink-0 rounded px-2.5 py-1.5 text-xs font-medium text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
-          onClick={() => onRemove(song.id)}
-          aria-label={`Remove ${song.title}`}
-        >
-          Remove
-        </button>
-      )}
+      <div className="flex shrink-0 items-center gap-1">
+        {onLike && (
+          <button
+            onClick={() => onLike(song)}
+            aria-label={liked ? `Unlike ${song.title}` : `Like ${song.title}`}
+            className={cn(
+              'grid h-8 w-8 place-items-center rounded-full transition-colors hover:bg-paper-2',
+              liked ? 'text-accent-ink' : 'text-muted opacity-0 group-hover:opacity-100 hover:text-ink'
+            )}
+          >
+            <Heart size={15} fill={liked ? 'currentColor' : 'none'} />
+          </button>
+        )}
+        {showRemoveButton && onRemove && (
+          <button
+            className="rounded px-2.5 py-1.5 text-xs font-medium text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+            onClick={() => onRemove(song.id)}
+            aria-label={`Remove ${song.title}`}
+          >
+            Remove
+          </button>
+        )}
+      </div>
     </div>
   );
 };

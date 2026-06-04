@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical, Share2 } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
@@ -37,6 +37,10 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   const deletePlaylist = usePlaylistStore((s) => s.deletePlaylist);
   const removeSongFromPlaylist = usePlaylistStore((s) => s.removeSongFromPlaylist);
   const reorderSongs = usePlaylistStore((s) => s.reorderSongs);
+  const toggleLike = usePlaylistStore((s) => s.toggleLike);
+  const likedPlaylist = usePlaylistStore((s) =>
+    Array.from(s.playlists.values()).find((p) => p.name === 'Liked Songs') ?? null
+  );
 
   const playQueue = usePlayerStore((s) => s.playQueue);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
@@ -44,6 +48,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
 
   const dragIndex = useRef<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
+  const likedIds = useMemo(() => new Set(likedPlaylist?.songs.map((s) => s.id) ?? []), [likedPlaylist]);
 
   useEffect(() => {
     if (playlist) setEditedName(playlist.name);
@@ -284,6 +289,8 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
                   <SongItem
                     song={song}
                     isActive={song.id === playingSongId}
+                    liked={likedIds.has(song.id)}
+                    onLike={toggleLike}
                     onPlay={() => handlePlaySong(song.id)}
                     onRemove={(songId) => removeSongFromPlaylist(playlist.id, songId)}
                   />

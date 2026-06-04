@@ -19,6 +19,7 @@ interface PlaylistState {
   removeSongFromPlaylist: (playlistId: string, songId: string) => Promise<void>;
   reorderSongs: (playlistId: string, fromIndex: number, toIndex: number) => Promise<void>;
   setSongYoutubeId: (playlistId: string, songId: string, youtubeId: string) => void;
+  toggleLike: (song: Song) => Promise<void>;
   toggleFavorite: (playlistId: string) => Promise<void>;
   updatePlaylistName: (playlistId: string, name: string) => Promise<void>;
   setLanguagePreference: (language: string) => void;
@@ -161,6 +162,24 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       newPlaylists.set(playlistId, { ...pl, songs });
       return { playlists: newPlaylists };
     });
+  },
+
+  // Like/unlike a song — kept in an auto-created "Liked Songs" playlist
+  toggleLike: async (song: Song) => {
+    let liked = Array.from(get().playlists.values()).find((p) => p.name === 'Liked Songs');
+    if (!liked) {
+      const data = await api.createPlaylist('Liked', 'Liked Songs');
+      const lp = toPlaylist(data);
+      liked = lp;
+      set((state) => {
+        const m = new Map(state.playlists);
+        m.set(lp.id, lp);
+        return { playlists: m };
+      });
+    }
+    const has = liked.songs.some((s) => s.id === song.id);
+    if (has) await get().removeSongFromPlaylist(liked.id, song.id);
+    else await get().addSongToPlaylist(liked.id, song);
   },
 
   toggleFavorite: async (playlistId: string) => {
