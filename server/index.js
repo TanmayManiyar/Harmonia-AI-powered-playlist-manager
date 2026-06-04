@@ -9,22 +9,27 @@ import playlistRoutes from './routes/playlists.js';
 import youtubeRoutes from './routes/youtube.js';
 import youtubeSyncRoutes from './routes/youtubeSync.js';
 import geminiChatRoutes from './routes/geminiChat.js';
+import { authLimiter, aiLimiter, searchLimiter, apiLimiter } from './middleware/rateLimit.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/playlist-manager';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+// Trust the first proxy hop (Render/Railway/Fly/etc.) so rate-limit sees real IPs
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({ origin: [CLIENT_URL, 'http://localhost:5174', 'http://localhost:4173'], credentials: true }));
 app.use(express.json());
+app.use('/api', apiLimiter);
 
-// Routes
-app.use('/api/auth', authRoutes);
+// Routes (with quota/abuse-aware rate limits)
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/playlists', playlistRoutes);
-app.use('/api/youtube', youtubeRoutes);
+app.use('/api/youtube', searchLimiter, youtubeRoutes);
 app.use('/api/youtube-sync', youtubeSyncRoutes);
-app.use('/api/gemini', geminiChatRoutes);
+app.use('/api/gemini', aiLimiter, geminiChatRoutes);
 
 // Redirect Google OAuth callback to youtube-sync handler
 // (Google Cloud Console has the redirect URI set to /api/youtube/oauth/callback)

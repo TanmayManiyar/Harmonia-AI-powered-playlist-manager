@@ -5,9 +5,11 @@ import { authenticate } from '../middleware/authenticate.js';
 import { normalizeString, escapeRegExp } from '../utils/validation.js';
 import { curatPlaylistFromChat } from '../services/gemini.js';
 import { VENUES } from '../services/venuePrompts.js';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 const router = express.Router();
 const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
+const RESOLVE_TTL = 24 * 60 * 60 * 1000; // song→video mapping is stable for a day
 
 router.use(authenticate);
 
@@ -23,43 +25,49 @@ async function buildExcludeList(userId) {
   return exclude;
 }
 
-/** Resolve each AI song to a YouTube video id (best-effort) and shape it. */
+/** Resolve a single title/artist to a YouTube video id, caching only hits. */
+async function resolveOne(title, artist, apiKey) {
+  const key = `yt:resolve:${title.toLowerCase()}|${artist.toLowerCase()}`;
+  const hit = cacheGet(key);
+  if (hit !== undefined) return hit;
+  try {
+    const r = await axios.get(`${YOUTUBE_BASE_URL}/search`, {
+      params: { part: 'snippet', q: `${title} ${artist} audio`, type: 'video', videoCategoryId: '10', maxResults: 1, key: apiKey },
+    });
+    const id = r.data.items?.[0]?.id?.videoId || '';
+    if (id) cacheSet(key, id, RESOLVE_TTL); // never cache failures/empties
+    return id;
+  } catch (err) {
+    console.error(`Failed to fetch YouTube ID for ${title}:`, err.response?.data || err.message);
+    return '';
+  }
+}
+
+/**
+ * Resolve all AI songs to YouTube ids — de-duplicated (same song searched
+ * once), cached across playlists, and resolved in parallel instead of N+1.
+ */
 async function resolveSongs(aiSongs, genre) {
   const ytApiKey = getApiKey();
-  const finalSongs = [];
-  for (const [index, song] of aiSongs.entries()) {
-    let youtubeId = '';
-    if (ytApiKey) {
-      try {
-        const ytResponse = await axios.get(`${YOUTUBE_BASE_URL}/search`, {
-          params: {
-            part: 'snippet',
-            q: `${song.title} ${song.artist} audio`,
-            type: 'video',
-            videoCategoryId: '10',
-            maxResults: 1,
-            key: ytApiKey,
-          },
-        });
-        if (ytResponse.data.items && ytResponse.data.items.length > 0) {
-          youtubeId = ytResponse.data.items[0].id.videoId;
-        }
-      } catch (ytError) {
-        console.error(`Failed to fetch YouTube ID for ${song.title}:`, ytError.response?.data || ytError.message);
-      }
-    }
-    finalSongs.push({
-      id: `ai-${Date.now()}-${index}`,
+  const ts = Date.now();
+  const inflight = new Map(); // title|artist -> Promise<videoId>
+  const resolve = (t, a) => {
+    const k = `${t.toLowerCase()}|${a.toLowerCase()}`;
+    if (!inflight.has(k)) inflight.set(k, ytApiKey ? resolveOne(t, a, ytApiKey) : Promise.resolve(''));
+    return inflight.get(k);
+  };
+  return Promise.all(
+    aiSongs.map(async (song, index) => ({
+      id: `ai-${ts}-${index}`,
       title: song.title,
       artist: song.artist,
       genre,
       language: song.language || 'English',
       isCustom: false,
       duration: 0,
-      youtubeId,
-    });
-  }
-  return finalSongs;
+      youtubeId: await resolve(song.title, song.artist),
+    }))
+  );
 }
 
 /** The user's strongest genres, blended with any recent-play genres. */

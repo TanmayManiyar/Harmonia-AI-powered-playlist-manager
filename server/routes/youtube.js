@@ -1,7 +1,9 @@
 import express from 'express';
 import axios from 'axios';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 const router = express.Router();
+const YT_TTL = 60 * 60 * 1000; // 1h — caches successful YouTube results only
 
 // Read API key at request time (not module load) because dotenv.config() hasn't run yet during ES module import hoisting
 function getApiKey() {
@@ -37,6 +39,11 @@ router.get('/genre/:genre', async (req, res) => {
     return res.json(getStaticSongs(genre, maxResults));
   }
 
+  // Cache by genre+language (not the random variation) so repeat browses are free
+  const genreKey = `yt:genre:${genre.toLowerCase()}|${language.toLowerCase()}|${maxResults}`;
+  const genreHit = cacheGet(genreKey);
+  if (genreHit) return res.json(genreHit);
+
   try {
     // Build a language-aware search query
     const variation = getRandomVariation();
@@ -70,7 +77,9 @@ router.get('/genre/:genre', async (req, res) => {
       };
     });
 
-    res.json(songs.slice(0, maxResults));
+    const sliced = songs.slice(0, maxResults);
+    cacheSet(genreKey, sliced, YT_TTL);
+    res.json(sliced);
   } catch (error) {
     console.error('YouTube API error:', error.response?.data || error.message);
     if (language.toLowerCase() === 'hindi') {
@@ -94,6 +103,10 @@ router.get('/search', async (req, res) => {
   if (!getApiKey()) {
     return res.json(searchStaticSongs(query, genre, maxResults));
   }
+
+  const searchKey = `yt:search:${query.toLowerCase()}|${genre.toLowerCase()}|${maxResults}`;
+  const searchHit = cacheGet(searchKey);
+  if (searchHit) return res.json(searchHit);
 
   try {
     const searchQuery = [query, genre, 'music'].filter(Boolean).join(' ');
@@ -122,6 +135,7 @@ router.get('/search', async (req, res) => {
       };
     });
 
+    cacheSet(searchKey, songs, YT_TTL);
     res.json(songs);
   } catch (error) {
     console.error('YouTube search error:', error.response?.data || error.message);
