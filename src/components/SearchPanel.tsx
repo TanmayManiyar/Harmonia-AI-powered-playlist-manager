@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play } from 'lucide-react';
 import { Song } from '../models';
 import { api } from '../services/api';
@@ -53,6 +53,18 @@ export const SearchPanel: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Search-as-you-type (debounced)
+  useEffect(() => {
+    if (!query.trim() && !genreFilter) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+    const t = setTimeout(() => handleSearch(), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, genreFilter]);
 
   const handleConfirmAdd = async () => {
     if (!selectedSong) return;

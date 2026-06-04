@@ -15,6 +15,7 @@ import {
   ThemeToggle,
 } from '../components';
 import { RippleDots } from '../components/RippleDots';
+import { OnboardingModal, ONBOARDED_KEY } from '../components/OnboardingModal';
 import { PlayerHost } from '../components/player/PlayerHost';
 import { PlayerBar } from '../components/player/PlayerBar';
 import { NowPlayingPanel } from '../components/player/NowPlayingPanel';
@@ -26,6 +27,13 @@ export const HomePage: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewId>('home');
   const [activeAction, setActiveAction] = useState<ActionId | null>(null);
 
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return !localStorage.getItem(ONBOARDED_KEY);
+    } catch {
+      return false;
+    }
+  });
   const [showDeleteStep1, setShowDeleteStep1] = useState(false);
   const [showDeleteStep2, setShowDeleteStep2] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -124,6 +132,8 @@ export const HomePage: React.FC = () => {
       />
 
       <CommandPalette onSelectView={setActiveView} onOpenAction={setActiveAction} />
+
+      <OnboardingModal isOpen={showOnboarding} onDone={() => setShowOnboarding(false)} />
 
       <PlayerHost />
       <PlayerBar inset />

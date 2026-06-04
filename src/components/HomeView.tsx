@@ -85,7 +85,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   // Generate on demand (not auto) — Gemini calls are precious on the free tier.
   const fetchForYou = () => {
     setForYouLoading(true);
-    const genres = [...new Set(getRecentlyPlayed().map((r) => r.genre).filter(Boolean))];
+    let onboardingGenres: string[] = [];
+    try {
+      onboardingGenres = JSON.parse(localStorage.getItem('playlist-manager:genres') || '[]');
+    } catch {
+      /* ignore */
+    }
+    const genres = [
+      ...new Set([...onboardingGenres, ...getRecentlyPlayed().map((r) => r.genre).filter(Boolean)]),
+    ];
     api
       .getForYou(genres)
       .then((d) => {
