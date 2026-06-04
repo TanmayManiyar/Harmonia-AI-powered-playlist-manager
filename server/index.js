@@ -1,4 +1,7 @@
 import 'dotenv/config.js';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -42,6 +45,20 @@ app.get('/api/youtube/oauth/callback', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
 });
+
+// Serve the built frontend on the same host (single-host deploy).
+// Skipped in dev where Vite serves the frontend separately.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distPath = path.join(__dirname, '..', 'dist');
+if (fs.existsSync(path.join(distPath, 'index.html'))) {
+  app.use(express.static(distPath));
+  // SPA fallback: any non-API GET returns index.html (Express 5 safe)
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+  console.log('🗂️  Serving built frontend from /dist');
+}
 
 // Connect to MongoDB and start server
 mongoose
