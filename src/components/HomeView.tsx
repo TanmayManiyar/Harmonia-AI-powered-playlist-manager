@@ -43,7 +43,7 @@ const greeting = () => {
 const Row: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-10">
     <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">{title}</h2>
-    <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">{children}</div>
+    <div className="scroll-funky -mx-1 flex gap-4 overflow-x-auto px-1 pb-2.5">{children}</div>
   </section>
 );
 
@@ -228,7 +228,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
           </button>
         ) : (
           <>
-            <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+            <div className="scroll-funky -mx-1 flex gap-4 overflow-x-auto px-1 pb-2.5">
               {forYou.map((p) => (
                 <div
                   key={p.id}
