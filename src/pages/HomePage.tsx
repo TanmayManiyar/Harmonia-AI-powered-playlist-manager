@@ -67,9 +67,9 @@ export const HomePage: React.FC = () => {
         onDeleteAccount={() => { setDeleteError(''); setShowDeleteStep1(true); }}
       />
 
-      {/* Decorative diagonal ripple, tucked top-right behind the content */}
-      <div className="pointer-events-none fixed right-8 top-24 z-0 hidden -rotate-12 opacity-80 lg:block">
-        <RippleDots />
+      {/* Decorative diagonal ripple covering ~the upper-right half, behind content */}
+      <div className="pointer-events-none fixed -right-4 top-12 z-0 hidden -rotate-12 opacity-70 lg:block">
+        <RippleDots rows={15} cols={22} />
       </div>
 
       <main className="canvas relative z-10 px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
