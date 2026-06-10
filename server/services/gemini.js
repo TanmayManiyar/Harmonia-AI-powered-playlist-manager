@@ -29,7 +29,8 @@ CRITICAL RULES:
 }
 3. DO NOT include any of the following songs, as the user already has them:
 ${excludeList.length > 0 ? excludeList.map(s => `- ${s}`).join('\n') : "No exclusions."}
-4. Ensure variety and high relevance to the prompt.`;
+4. EVERY song MUST be unique. NEVER repeat the same song, and never list the same title twice. Use a diverse mix of different artists — do not put the same artist on more than 2 tracks.
+5. Ensure variety and high relevance to the prompt.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -39,23 +40,33 @@ ${excludeList.length > 0 ? excludeList.map(s => `- ${s}`).join('\n') : "No exclu
       contents: userPrompt,
       config: {
         systemInstruction,
-        // Force the model to output JSON if it supports it via schema, but flash is good at following instruction
-        responseMimeType: "application/json", 
+        responseMimeType: "application/json",
+        temperature: 1.1, // more variety, less repetition
       }
     });
 
     const responseText = response.text;
-    
-    // Safety check in case the model wrapps it in markdown despite instructions
+
+    // Safety check in case the model wraps it in markdown despite instructions
     const cleanText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
+
     const parsedResponse = JSON.parse(cleanText);
-    
+
     if (!parsedResponse.genre || !Array.isArray(parsedResponse.songs)) {
       throw new Error("Gemini did not return the expected JSON structure");
     }
 
-    return parsedResponse;
+    // De-duplicate (guards against model repetition) and drop malformed entries
+    const seen = new Set();
+    const songs = parsedResponse.songs.filter((s) => {
+      if (!s || !s.title || !s.artist) return false;
+      const key = `${String(s.title).toLowerCase().trim()}|${String(s.artist).toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return { genre: parsedResponse.genre, songs };
   } catch (error) {
     console.error('Gemini API Error:', error);
     const msg = String(error?.message || '');
