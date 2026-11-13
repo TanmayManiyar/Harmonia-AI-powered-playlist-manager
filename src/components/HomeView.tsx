@@ -243,7 +243,18 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
       {recent.length > 0 && (
         <Row title="On Repeat 🔁">
-          {recent.map((p) => (
+          {recent.map((p) => {
+            // Your own playlists get the full tile (tap to open: play, edit, share, sync…),
+            // exactly like in the Library. Others' playlists you played still just replay.
+            const own = allPlaylists.find((x) => x.id === p.id);
+            if (own) {
+              return (
+                <div key={p.id} className="w-44 shrink-0">
+                  <PlaylistCard playlist={own} onOpen={setSelectedId} />
+                </div>
+              );
+            }
+            return (
             <button
               key={p.id}
               onClick={() => playRecent(p)}
@@ -255,7 +266,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
               </span>
               <span className="block px-3 py-2.5 text-xs text-muted">{p.genre} · {p.songs.length} songs</span>
             </button>
-          ))}
+            );
+          })}
         </Row>
       )}
 

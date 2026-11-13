@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical, Share2 } from 'lucide-react';
+import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical, Link2 } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore, isPlayable } from '../store/playerStore';
@@ -26,6 +26,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   onClose,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncState>('idle');
@@ -158,7 +159,9 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
       const url = `${window.location.origin}/p/${shareId}`;
       try {
         await navigator.clipboard.writeText(url);
-        flash('success', 'Share link copied to clipboard');
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+        flash('success', 'Link copied to clipboard');
       } catch {
         flash('success', url);
       }
@@ -234,8 +237,8 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
                   ? 'Sync to YouTube'
                   : 'Connect YouTube'}
           </Button>
-          <Button variant="ghost" onClick={handleShare}>
-            <Share2 size={16} /> Share
+          <Button variant="ghost" onClick={handleShare} aria-label="Copy link to this playlist">
+            {linkCopied ? <Check size={16} /> : <Link2 size={16} />} {linkCopied ? 'Copied!' : 'Copy link'}
           </Button>
           <Button variant="ghost" onClick={() => setIsEditing(true)}>
             <Pencil size={16} /> Rename
