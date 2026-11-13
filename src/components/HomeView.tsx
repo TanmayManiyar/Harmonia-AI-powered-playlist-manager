@@ -3,6 +3,7 @@ import { Play, Plus, Check, Loader2, RotateCw, Sparkles } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { cn } from '../lib/utils';
 import { usePlayerStore } from '../store/playerStore';
+import type { Playlist } from '../models';
 import { api, DiscoverPlaylist, SuggestedPlaylist } from '../services/api';
 import { PlaylistCard } from './PlaylistCard';
 import { PlaylistDetailModal } from './PlaylistDetailModal';
@@ -86,6 +87,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const [moodText, setMoodText] = useState('');
   const [moodLoading, setMoodLoading] = useState(false);
   const [moodError, setMoodError] = useState('');
+  const [trendingOpen, setTrendingOpen] = useState<DiscoverPlaylist | null>(null);
+  const [savedTrending, setSavedTrending] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = allPlaylists.find((p) => p.id === selectedId) ?? null;
 
@@ -184,6 +187,44 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const playDiscover = (p: DiscoverPlaylist) => {
     playPlaylist(toRecent(p));
   };
+
+  const trendingKey = (p: DiscoverPlaylist) => p._id || p.id || '';
+
+  // A trending playlist you already own opens the full editable view; anyone else's
+  // opens a view-only one (play / queue / like / save a copy).
+  const openTrending = (p: DiscoverPlaylist) => {
+    const id = trendingKey(p);
+    if (allPlaylists.some((x) => x.id === id)) setSelectedId(id);
+    else setTrendingOpen(p);
+  };
+
+  const saveTrending = async (p: DiscoverPlaylist) => {
+    try {
+      const saved = await api.createPlaylist(p.genre, p.name, p.songs);
+      await fetchPlaylists();
+      markCreated(saved._id || saved.id);
+      setSavedTrending((prev) => new Set(prev).add(trendingKey(p)));
+      burstConfetti();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const trendingView = useMemo<Playlist | null>(
+    () =>
+      trendingOpen
+        ? {
+            id: trendingKey(trendingOpen),
+            name: trendingOpen.name,
+            genre: trendingOpen.genre,
+            songs: trendingOpen.songs ?? [],
+            isFavorite: false,
+            createdAt: new Date(trendingOpen.createdAt),
+            updatedAt: new Date(trendingOpen.updatedAt),
+          }
+        : null,
+    [trendingOpen]
+  );
 
   const genreEntries = Array.from(byGenre.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
@@ -301,19 +342,24 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       {!popularLoading && popular.length > 0 && (
         <Row title="Trending rn 🔥">
           {popular.map((p) => (
-            <button
-              key={p._id || p.id}
-              onClick={() => playDiscover(p)}
-              className="group relative w-44 shrink-0 overflow-hidden rounded-md border border-line bg-surface text-left shadow-[var(--shadow)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+            <div
+              key={trendingKey(p)}
+              className="group relative w-44 shrink-0 overflow-hidden rounded-md border border-line bg-surface shadow-[var(--shadow)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
             >
-              <PlaylistCover name={p.name} genre={p.genre} className="aspect-[4/3] w-full" />
-              <span className="absolute bottom-[3.4rem] right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
+              <button onClick={() => openTrending(p)} aria-label={`Open ${p.name}`} className="block w-full text-left">
+                <PlaylistCover name={p.name} genre={p.genre} className="aspect-[4/3] w-full" />
+                <span className="block px-3.5 py-3">
+                  <span className="block truncate text-xs text-muted">{p.genre} · by {p.ownerName}</span>
+                </span>
+              </button>
+              <button
+                onClick={() => playDiscover(p)}
+                aria-label={`Play ${p.name}`}
+                className="absolute bottom-[3.4rem] right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all hover:brightness-110 focus-visible:translate-y-0 focus-visible:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100"
+              >
                 <Play size={16} className="translate-x-px" />
-              </span>
-              <span className="block px-3.5 py-3">
-                <span className="block truncate text-xs text-muted">{p.genre} · by {p.ownerName}</span>
-              </span>
-            </button>
+              </button>
+            </div>
           ))}
         </Row>
       )}
@@ -380,6 +426,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       </section>
 
       <PlaylistDetailModal playlist={selected} isOpen={selected !== null} onClose={() => setSelectedId(null)} />
+      <PlaylistDetailModal
+        playlist={trendingView}
+        isOpen={trendingView !== null}
+        onClose={() => setTrendingOpen(null)}
+        readOnly
+        ownerName={trendingOpen?.ownerName}
+        onSave={trendingOpen ? () => saveTrending(trendingOpen) : undefined}
+        saved={trendingOpen ? savedTrending.has(trendingKey(trendingOpen)) : false}
+      />
     </div>
   );
 };

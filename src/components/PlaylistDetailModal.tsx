@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical, Link2 } from 'lucide-react';
+import { MonitorPlay, Play, Pencil, Heart, Trash2, Check, Loader2, ListPlus, GripVertical, Link2, Plus } from 'lucide-react';
 import { Playlist } from '../models';
 import { usePlaylistStore } from '../store';
 import { usePlayerStore, isPlayable } from '../store/playerStore';
@@ -16,6 +16,11 @@ interface PlaylistDetailModalProps {
   playlist: Playlist | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Someone else's playlist: play/queue/like only, with an optional "Save to my library". */
+  readOnly?: boolean;
+  ownerName?: string | undefined;
+  onSave?: (() => Promise<void> | void) | undefined;
+  saved?: boolean;
 }
 
 type SyncState = 'idle' | 'syncing' | 'success' | 'error';
@@ -24,7 +29,12 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
   playlist,
   isOpen,
   onClose,
+  readOnly = false,
+  ownerName,
+  onSave,
+  saved = false,
 }) => {
+  const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -170,6 +180,16 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
     }
   };
 
+  const handleSave = async () => {
+    if (!onSave || saving || saved) return;
+    setSaving(true);
+    try {
+      await onSave();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const languages = [...new Set(playlist.songs.map((s) => s.language).filter(Boolean))].join(', ');
 
   return (
@@ -206,6 +226,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
               </span>
               <span>{playlist.songs.length} songs</span>
               {languages && <span>· {languages}</span>}
+              {readOnly && ownerName && <span>· by {ownerName}</span>}
             </div>
           </div>
         </div>
@@ -217,43 +238,60 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
           <Button variant="outline" onClick={handleQueueAll} disabled={playableCount === 0}>
             <ListPlus size={16} /> Queue
           </Button>
-          <Button
-            variant="outline"
-            onClick={handleSyncToYouTube}
-            disabled={syncStatus === 'syncing'}
-          >
-            {syncStatus === 'syncing' ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : syncStatus === 'success' ? (
-              <Check size={16} />
-            ) : (
-              <MonitorPlay size={16} />
-            )}
-            {syncStatus === 'syncing'
-              ? 'Syncing...'
-              : syncStatus === 'success'
-                ? 'Synced!'
-                : ytConnected
-                  ? 'Sync to YouTube'
-                  : 'Connect YouTube'}
-          </Button>
-          <Button variant="ghost" onClick={handleShare} aria-label="Copy link to this playlist">
-            {linkCopied ? <Check size={16} /> : <Link2 size={16} />} {linkCopied ? 'Copied!' : 'Copy link'}
-          </Button>
-          <Button variant="ghost" onClick={() => setIsEditing(true)}>
-            <Pencil size={16} /> Rename
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => toggleFavorite(playlist.id)}
-            className={playlist.isFavorite ? 'text-accent-ink' : ''}
-          >
-            <Heart size={16} fill={playlist.isFavorite ? 'currentColor' : 'none'} />
-            {playlist.isFavorite ? 'Favorited' : 'Favorite'}
-          </Button>
-          <Button variant="danger" onClick={() => setShowDeleteDialog(true)}>
-            <Trash2 size={16} /> Delete
-          </Button>
+          {readOnly ? (
+            onSave && (
+              <Button variant="outline" onClick={handleSave} disabled={saving || saved}>
+                {saving ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : saved ? (
+                  <Check size={16} />
+                ) : (
+                  <Plus size={16} />
+                )}
+                {saved ? 'Saved to library' : saving ? 'Saving...' : 'Save to my library'}
+              </Button>
+            )
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSyncToYouTube}
+                disabled={syncStatus === 'syncing'}
+              >
+                {syncStatus === 'syncing' ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : syncStatus === 'success' ? (
+                  <Check size={16} />
+                ) : (
+                  <MonitorPlay size={16} />
+                )}
+                {syncStatus === 'syncing'
+                  ? 'Syncing...'
+                  : syncStatus === 'success'
+                    ? 'Synced!'
+                    : ytConnected
+                      ? 'Sync to YouTube'
+                      : 'Connect YouTube'}
+              </Button>
+              <Button variant="ghost" onClick={handleShare} aria-label="Copy link to this playlist">
+                {linkCopied ? <Check size={16} /> : <Link2 size={16} />} {linkCopied ? 'Copied!' : 'Copy link'}
+              </Button>
+              <Button variant="ghost" onClick={() => setIsEditing(true)}>
+                <Pencil size={16} /> Rename
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => toggleFavorite(playlist.id)}
+                className={playlist.isFavorite ? 'text-accent-ink' : ''}
+              >
+                <Heart size={16} fill={playlist.isFavorite ? 'currentColor' : 'none'} />
+                {playlist.isFavorite ? 'Favorited' : 'Favorite'}
+              </Button>
+              <Button variant="danger" onClick={() => setShowDeleteDialog(true)}>
+                <Trash2 size={16} /> Delete
+              </Button>
+            </>
+          )}
         </div>
 
         {syncMessage && (
@@ -278,16 +316,18 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
             playlist.songs.map((song, i) => (
               <div
                 key={song.id}
-                draggable
+                draggable={!readOnly}
                 onDragStart={() => { dragIndex.current = i; }}
                 onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
-                onDragOver={(e) => { e.preventDefault(); if (dragOver !== i) setDragOver(i); }}
-                onDrop={() => handleDrop(i)}
+                onDragOver={(e) => { if (readOnly) return; e.preventDefault(); if (dragOver !== i) setDragOver(i); }}
+                onDrop={() => { if (!readOnly) handleDrop(i); }}
                 className={cn('flex items-center gap-1 rounded', dragOver === i && 'bg-paper-2 ring-1 ring-accent/30')}
               >
-                <span className="cursor-grab px-1 text-muted active:cursor-grabbing" aria-hidden="true">
-                  <GripVertical size={15} />
-                </span>
+                {!readOnly && (
+                  <span className="cursor-grab px-1 text-muted active:cursor-grabbing" aria-hidden="true">
+                    <GripVertical size={15} />
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <SongItem
                     song={song}
@@ -296,6 +336,7 @@ export const PlaylistDetailModal: React.FC<PlaylistDetailModalProps> = ({
                     onLike={toggleLike}
                     onPlay={() => handlePlaySong(song.id)}
                     onRemove={(songId) => removeSongFromPlaylist(playlist.id, songId)}
+                    showRemoveButton={!readOnly}
                   />
                 </div>
               </div>
