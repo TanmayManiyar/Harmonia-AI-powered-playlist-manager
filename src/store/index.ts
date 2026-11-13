@@ -10,9 +10,12 @@ interface PlaylistState {
   playlists: Map<string, Playlist>;
   languagePreference: string;
   isLoading: boolean;
+  lastCreatedId: string | null; // most recently created playlist (drives the Home banner)
 
   // Actions
   fetchPlaylists: () => Promise<void>;
+  markCreated: (id: string | undefined) => void;
+  clearCreated: () => void;
   createPlaylist: (genre: string) => Promise<Playlist>;
   deletePlaylist: (playlistId: string) => Promise<void>;
   addSongToPlaylist: (playlistId: string, song: Song) => Promise<void>;
@@ -52,6 +55,10 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   playlists: new Map(),
   languagePreference: localStorage.getItem('playlist-manager:language') || 'en',
   isLoading: false,
+  lastCreatedId: null,
+
+  markCreated: (id) => set({ lastCreatedId: id || null }),
+  clearCreated: () => set({ lastCreatedId: null }),
 
   fetchPlaylists: async () => {
     try {

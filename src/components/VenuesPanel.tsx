@@ -39,9 +39,15 @@ type TileState = 'idle' | 'loading' | 'done' | 'error';
 /**
  * VenuesPanel — one tap on a venue generates a vibe-matched playlist.
  */
-export const VenuesPanel: React.FC = () => {
+interface VenuesPanelProps {
+  /** Dismiss the surrounding modal once a playlist is ready. */
+  onDone?: () => void;
+}
+
+export const VenuesPanel: React.FC<VenuesPanelProps> = ({ onDone }) => {
   const [states, setStates] = useState<Record<string, TileState>>({});
   const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
+  const markCreated = usePlaylistStore((s) => s.markCreated);
 
   const setState = (id: string, st: TileState) => setStates((prev) => ({ ...prev, [id]: st }));
 
@@ -49,11 +55,14 @@ export const VenuesPanel: React.FC = () => {
     if (states[venue.id] === 'loading') return;
     setState(venue.id, 'loading');
     try {
-      await api.createVenuePlaylist(venue.id);
+      const created = await api.createVenuePlaylist(venue.id);
       await fetchPlaylists();
+      markCreated(created._id || created.id);
       setState(venue.id, 'done');
       burstConfetti();
       setTimeout(() => setState(venue.id, 'idle'), 2500);
+      // Close so the new playlist's "Play now" banner is right there on Home.
+      onDone?.();
     } catch {
       setState(venue.id, 'error');
       setTimeout(() => setState(venue.id, 'idle'), 3000);

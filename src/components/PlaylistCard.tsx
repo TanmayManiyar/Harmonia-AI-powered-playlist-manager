@@ -69,7 +69,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onOpen, in
           onClick={handlePlay}
           role="button"
           aria-label={`Play ${playlist.name}`}
-          className="absolute bottom-2.5 right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all duration-200 hover:brightness-95 group-hover:translate-y-0 group-hover:opacity-100"
+          className="absolute bottom-2.5 right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all duration-200 hover:brightness-95 group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100"
         >
           <Play size={16} className="translate-x-px" />
         </span>

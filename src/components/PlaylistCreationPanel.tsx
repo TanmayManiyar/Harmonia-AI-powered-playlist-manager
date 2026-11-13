@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
+import type { Song } from '../models';
 import { burstConfetti } from '../lib/confetti';
+import { Play } from 'lucide-react';
 import { Button } from './ui/button';
+import { playPlaylist } from '../lib/playPlaylist';
 import { cn } from '../lib/utils';
 
 /**
  * PlaylistCreationPanel — genre + languages, generated via Gemini.
  */
-export const PlaylistCreationPanel: React.FC = () => {
+interface PlaylistCreationPanelProps {
+  /** Called to dismiss the surrounding modal (e.g. after tapping Play now). */
+  onDone?: () => void;
+}
+
+export const PlaylistCreationPanel: React.FC<PlaylistCreationPanelProps> = ({ onDone }) => {
   const [genre, setGenre] = useState('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [created, setCreated] = useState<{ id: string; name: string; genre: string; songs: Song[] } | null>(null);
 
   const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
+  const markCreated = usePlaylistStore((s) => s.markCreated);
 
   const commonGenres = ['Rock', 'Pop', 'Jazz', 'Classical', 'Hip Hop', 'Electronic', 'Country', 'Bollywood', 'Metal', 'R&B', 'Latin'];
   const availableLanguages = ['English', 'Hindi', 'Spanish', 'French', 'Korean', 'Japanese', 'Mandarin', 'Portuguese', 'German', 'Italian'];
@@ -28,6 +38,7 @@ export const PlaylistCreationPanel: React.FC = () => {
 
   const handleCreatePlaylist = async () => {
     setMessage(null);
+    setCreated(null);
     const trimmedGenre = genre.trim();
     if (!trimmedGenre) return setMessage({ type: 'error', text: 'Please enter a genre' });
     if (selectedLanguages.length === 0)
@@ -38,6 +49,9 @@ export const PlaylistCreationPanel: React.FC = () => {
       const prompt = `Create a ${trimmedGenre} playlist. Include exactly 10 songs. Ensure the songs are distributed across these languages: ${selectedLanguages.join(', ')}.`;
       const newPlaylist = await api.chatWithAI(prompt, undefined, trimmedGenre);
       await fetchPlaylists();
+      const id = newPlaylist._id || newPlaylist.id || '';
+      markCreated(id);
+      setCreated({ id, name: newPlaylist.name, genre: newPlaylist.genre, songs: newPlaylist.songs ?? [] });
       burstConfetti();
       setMessage({
         type: 'success',
@@ -100,6 +114,23 @@ export const PlaylistCreationPanel: React.FC = () => {
           )}
         >
           {message.text}
+          {message.type === 'success' && created && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={() => {
+                  playPlaylist(created);
+                  onDone?.();
+                }}
+              >
+                <Play size={14} /> Play now
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onDone?.()}>
+                Done
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

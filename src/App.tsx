@@ -36,6 +36,8 @@ function App() {
           path="/p/:shareId"
           element={isAuthenticated ? <SharedPlaylistPage /> : <RequireLoginRedirect />}
         />
+        {/* Unknown URL: go home instead of rendering a blank page */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AuthModal />
     </BrowserRouter>

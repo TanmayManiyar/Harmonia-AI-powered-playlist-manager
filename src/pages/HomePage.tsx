@@ -23,6 +23,7 @@ import { NowPlayingPanel } from '../components/player/NowPlayingPanel';
 import { useAuthStore } from '../store/authStore';
 import { usePlaylistStore } from '../store';
 import { useMediaKeys } from '../hooks/useMediaKeys';
+import { FreshPlaylistBanner } from '../components/FreshPlaylistBanner';
 
 export const HomePage: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewId>('home');
@@ -85,6 +86,9 @@ export const HomePage: React.FC = () => {
       </div>
 
       <main className="canvas relative z-10 px-5 pb-24 pt-20 lg:ml-64 lg:px-10 lg:pt-10">
+        <div className="mx-auto max-w-[1180px]">
+          <FreshPlaylistBanner />
+        </div>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
@@ -103,16 +107,16 @@ export const HomePage: React.FC = () => {
       </main>
 
       <Modal isOpen={activeAction === 'create'} onClose={() => setActiveAction(null)} title="Create Playlist">
-        <PlaylistCreationPanel />
+        <PlaylistCreationPanel onDone={() => setActiveAction(null)} />
       </Modal>
       <Modal isOpen={activeAction === 'venues'} onClose={() => setActiveAction(null)} title="Venue Playlists" size="lg">
-        <VenuesPanel />
+        <VenuesPanel onDone={() => setActiveAction(null)} />
       </Modal>
       <Modal isOpen={activeAction === 'search'} onClose={() => setActiveAction(null)} title="Search & Browse 🔎" size="lg">
         <SearchPanel />
       </Modal>
       <Modal isOpen={activeAction === 'ai'} onClose={() => setActiveAction(null)} size="lg">
-        <AIChatPanel />
+        <AIChatPanel onDone={() => setActiveAction(null)} />
       </Modal>
 
       {deleteError && (

@@ -1,15 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Bot, User, Loader2, Send } from 'lucide-react';
+import { Sparkles, Bot, User, Loader2, Send, Play } from 'lucide-react';
 import { usePlaylistStore } from '../store';
 import { api } from '../services/api';
 import { cn } from '../lib/utils';
+import { playPlaylist } from '../lib/playPlaylist';
+import type { Song } from '../models';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  playlist?: { id: string; name: string; genre: string; songs: Song[] };
 }
 
-export const AIChatPanel: React.FC = () => {
+interface AIChatPanelProps {
+  /** Dismiss the surrounding modal (after tapping Play now). */
+  onDone?: () => void;
+}
+
+export const AIChatPanel: React.FC<AIChatPanelProps> = ({ onDone }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -21,6 +29,7 @@ export const AIChatPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
+  const markCreated = usePlaylistStore((s) => s.markCreated);
 
   useEffect(() => {
     if (chatWindowRef.current) {
@@ -37,11 +46,14 @@ export const AIChatPanel: React.FC = () => {
     try {
       const newPlaylist = await api.chatWithAI(trimmed);
       await fetchPlaylists();
+      const id = newPlaylist._id || newPlaylist.id || '';
+      markCreated(id);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `Done! I created "${newPlaylist.name}" with ${newPlaylist.songs.length} songs. You'll find it in your library.`,
+          content: `Done! I created "${newPlaylist.name}" with ${newPlaylist.songs.length} songs.`,
+          playlist: { id, name: newPlaylist.name, genre: newPlaylist.genre, songs: newPlaylist.songs ?? [] },
         },
       ]);
     } catch (error: any) {
@@ -95,6 +107,19 @@ export const AIChatPanel: React.FC = () => {
               )}
             >
               {msg.content}
+              {msg.playlist && (
+                <button
+                  onClick={() => {
+                    playPlaylist(msg.playlist!);
+                    usePlaylistStore.getState().clearCreated();
+                    onDone?.();
+                  }}
+                  disabled={msg.playlist.songs.length === 0}
+                  className="mt-2.5 flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-accent-contrast shadow-[0_3px_0_0_rgba(0,0,0,0.22)] transition-all hover:brightness-110 active:translate-y-0.5 active:shadow-none disabled:opacity-50"
+                >
+                  <Play size={13} className="translate-x-px" /> Play now
+                </button>
+              )}
             </div>
           </div>
         ))}

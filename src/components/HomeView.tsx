@@ -10,6 +10,7 @@ import { PlaylistCover } from './PlaylistCover';
 import { BrowseGrid } from './BrowseGrid';
 import { getRecentlyPlayed, recordRecentlyPlayed, RecentPlaylist } from '../lib/recentlyPlayed';
 import { burstConfetti } from '../lib/confetti';
+import { playPlaylist } from '../lib/playPlaylist';
 
 const FORYOU_KEY = 'playlist-manager:foryou';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -73,6 +74,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   const byGenre = usePlaylistStore((s) => s.getPlaylistsByGenre());
   const allPlaylists = usePlaylistStore((s) => s.getAllPlaylists());
   const fetchPlaylists = usePlaylistStore((s) => s.fetchPlaylists);
+  const markCreated = usePlaylistStore((s) => s.markCreated);
   const playQueue = usePlayerStore((s) => s.playQueue);
 
   const [recent, setRecent] = useState<RecentPlaylist[]>([]);
@@ -139,8 +141,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
 
   const saveSuggested = async (p: SuggestedPlaylist) => {
     try {
-      await api.createPlaylist(p.genre, p.name, p.songs);
+      const saved = await api.createPlaylist(p.genre, p.name, p.songs);
       await fetchPlaylists();
+      markCreated(saved._id || saved.id);
       setSavedIds((prev) => new Set(prev).add(p.id));
       burstConfetti();
     } catch {
@@ -154,10 +157,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
     setMoodLoading(true);
     setMoodError('');
     try {
-      await api.chatWithAI(`A playlist for this exact vibe: ${mood}. Match the energy and mood closely.`, mood, 'Mood');
+      const made = await api.chatWithAI(`A playlist for this exact vibe: ${mood}. Match the energy and mood closely.`, mood, 'Mood');
       await fetchPlaylists();
+      markCreated(made._id || made.id);
       setMoodText('');
       burstConfetti();
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // show the "Play now" banner
     } catch (e: any) {
       setMoodError(e?.message || 'could not cook that one — try again');
     } finally {
@@ -173,18 +178,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
   });
 
   const playRecent = (p: RecentPlaylist) => {
-    if (playQueue(p.songs, 0, p.id || null) > 0) {
-      recordRecentlyPlayed(p);
-      if (p.id) api.markPlayed(p.id);
-    }
+    playPlaylist(p);
   };
 
   const playDiscover = (p: DiscoverPlaylist) => {
-    const r = toRecent(p);
-    if (playQueue(r.songs, 0, r.id || null) > 0) {
-      recordRecentlyPlayed(r);
-      if (r.id) api.markPlayed(r.id);
-    }
+    playPlaylist(toRecent(p));
   };
 
   const genreEntries = Array.from(byGenre.entries()).sort((a, b) => a[0].localeCompare(b[0]));
@@ -220,6 +218,29 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
         </section>
       )}
 
+      <section className="mb-10">
+        <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">make a new one ✨</h2>
+        <div className="mb-5 flex flex-wrap gap-2.5">
+          <input
+            value={moodText}
+            onChange={(e) => setMoodText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && cookMood()}
+            placeholder="type any mood… rainy day, heartbreak, gym 🏋️, 3am drive"
+            className="min-w-56 flex-1 rounded-full border-2 border-line-strong bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+          />
+          <button
+            onClick={cookMood}
+            disabled={moodLoading || !moodText.trim()}
+            className="rounded-full bg-accent px-5 text-sm font-semibold text-accent-contrast shadow-[0_4px_0_0_rgba(0,0,0,0.22)] transition-all hover:brightness-110 hover:translate-y-0.5 hover:shadow-[0_2px_0_0_rgba(0,0,0,0.22)] active:scale-95 disabled:opacity-50"
+          >
+            {moodLoading ? 'cooking…' : 'cook it 🍳'}
+          </button>
+        </div>
+        {moodError && (
+          <div className="mb-4 rounded-lg border border-danger/40 px-3 py-2 text-sm text-danger">{moodError}</div>
+        )}
+      </section>
+
       {recent.length > 0 && (
         <Row title="On Repeat 🔁">
           {recent.map((p) => (
@@ -229,13 +250,32 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
               className="group relative w-40 shrink-0 overflow-hidden rounded-md border border-line bg-surface text-left shadow-[var(--shadow)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
             >
               <PlaylistCover name={p.name} genre={p.genre} className="aspect-[4/3] w-full" />
-              <span className="absolute bottom-14 right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100">
+              <span className="absolute bottom-14 right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
                 <Play size={16} className="translate-x-px" />
               </span>
               <span className="block px-3 py-2.5 text-xs text-muted">{p.genre} · {p.songs.length} songs</span>
             </button>
           ))}
         </Row>
+      )}
+
+      {allPlaylists.length === 0 ? (
+        <p className="rounded-2xl border-2 border-dashed border-line bg-surface/50 px-7 py-14 text-center text-sm text-muted">
+          your library's a ghost town rn 👻 — hit Create, Venues, or AI Chat to cook up your first playlist.
+        </p>
+      ) : (
+        <section className="mb-2">
+          <h2 className="mb-5 font-display text-2xl font-bold tracking-tight text-ink">your playlists 💿</h2>
+          {genreEntries.map(([genre, playlists]) => (
+            <Row key={genre} title={genre}>
+              {playlists.map((playlist, i) => (
+                <div key={playlist.id} className="w-44 shrink-0">
+                  <PlaylistCard playlist={playlist} onOpen={setSelectedId} index={i + 1} />
+                </div>
+              ))}
+            </Row>
+          ))}
+        </section>
       )}
 
       {popularLoading && (
@@ -255,7 +295,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
               className="group relative w-44 shrink-0 overflow-hidden rounded-md border border-line bg-surface text-left shadow-[var(--shadow)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
             >
               <PlaylistCover name={p.name} genre={p.genre} className="aspect-[4/3] w-full" />
-              <span className="absolute bottom-[3.4rem] right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100">
+              <span className="absolute bottom-[3.4rem] right-2.5 grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
                 <Play size={16} className="translate-x-px" />
               </span>
               <span className="block px-3.5 py-3">
@@ -300,7 +340,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
                 >
                   <button onClick={() => playSuggested(p)} aria-label={`Play ${p.name}`} className="block w-full text-left">
                     <PlaylistCover name={p.name} genre={p.genre} className="aspect-[4/3] w-full" />
-                    <span className="absolute right-2.5 top-[5.6rem] grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100">
+                    <span className="absolute right-2.5 top-[5.6rem] grid h-9 w-9 translate-y-1 place-items-center rounded-full bg-accent text-accent-contrast opacity-0 shadow-[var(--shadow)] transition-all group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
                       <Play size={16} className="translate-x-px" />
                     </span>
                   </button>
@@ -323,44 +363,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ userName }) => {
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">pick a vibe 🎟️</h2>
-        <div className="mb-5 flex flex-wrap gap-2.5">
-          <input
-            value={moodText}
-            onChange={(e) => setMoodText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && cookMood()}
-            placeholder="type any mood… rainy day, heartbreak, gym 🏋️, 3am drive"
-            className="min-w-56 flex-1 rounded-full border-2 border-line-strong bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
-          />
-          <button
-            onClick={cookMood}
-            disabled={moodLoading || !moodText.trim()}
-            className="rounded-full bg-accent px-5 text-sm font-semibold text-accent-contrast shadow-[0_4px_0_0_rgba(0,0,0,0.22)] transition-all hover:brightness-110 hover:translate-y-0.5 hover:shadow-[0_2px_0_0_rgba(0,0,0,0.22)] active:scale-95 disabled:opacity-50"
-          >
-            {moodLoading ? 'cooking…' : 'cook it 🍳'}
-          </button>
-        </div>
-        {moodError && (
-          <div className="mb-4 rounded-lg border border-danger/40 px-3 py-2 text-sm text-danger">{moodError}</div>
-        )}
+        <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-ink">browse by genre 🎟️</h2>
         <BrowseGrid limitPerGroup={4} />
       </section>
-
-      {allPlaylists.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-line bg-surface/50 px-7 py-14 text-center text-sm text-muted">
-          your library's a ghost town rn 👻 — hit Create, Venues, or AI Chat to cook up your first playlist.
-        </p>
-      ) : (
-        genreEntries.map(([genre, playlists]) => (
-          <Row key={genre} title={genre}>
-            {playlists.map((playlist, i) => (
-              <div key={playlist.id} className="w-44 shrink-0">
-                <PlaylistCard playlist={playlist} onOpen={setSelectedId} index={i + 1} />
-              </div>
-            ))}
-          </Row>
-        ))
-      )}
 
       <PlaylistDetailModal playlist={selected} isOpen={selected !== null} onClose={() => setSelectedId(null)} />
     </div>
