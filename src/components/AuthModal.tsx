@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { useAuthModalStore } from '../store/authModalStore';
 import { useAuthStore } from '../store/authStore';
 import { Button } from './ui/button';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const REDIRECT_KEY = 'playlist-manager:redirect';
 
@@ -28,16 +29,15 @@ export const AuthModal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (!isOpen) return;
     setError(null);
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
     document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
     };
   }, [isOpen, close]);
 
