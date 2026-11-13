@@ -97,3 +97,25 @@ Open `http://localhost:5000` — you're hitting the exact same setup as prod.
 - [ ] OAuth redirect URI updated
 - [ ] `npm run seed` run against Atlas
 - [ ] Rate limiting is already on (auth/AI/search)
+
+---
+
+## Deploying on Vercel (recommended)
+
+Vercel serves the Vite build from its CDN and runs the Express app as a
+serverless function (`api/index.js` -> `server/app.js`; `/api/*` is rewritten
+there by `vercel.json`). Same origin, no CORS.
+
+1. Vercel -> **Add New -> Project** -> import the GitHub repo (Framework: Vite;
+   build/output come from `vercel.json`).
+2. Environment variables (same as above, with these differences):
+   - `VITE_API_BASE_URL` = `/api`
+   - `CLIENT_URL` = `https://YOUR-APP.vercel.app`
+   - `GOOGLE_REDIRECT_URI` = `https://YOUR-APP.vercel.app/api/youtube/oauth/callback`
+   - Optional but recommended: add the **Upstash Redis** integration (Storage tab).
+     It injects `KV_REST_API_URL`/`KV_REST_API_TOKEN`, and rate limits then work
+     across serverless instances. Without it, limits are per-instance.
+3. Atlas **Network Access** must allow `0.0.0.0/0` (Vercel IPs are dynamic).
+4. Add the new redirect URI in Google Cloud -> Credentials.
+5. `Playlist.syncIndexes()` no longer runs on boot in serverless; run
+   `npm run seed` once from your machine if indexes change.
